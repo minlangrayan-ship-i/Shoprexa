@@ -27,7 +27,7 @@ type RegisterPayload = {
   email: string;
   phone: string;
   password: string;
-  role: AccountRole;
+  role: 'client' | 'seller';
   country: string;
   city: string;
 };
@@ -72,6 +72,8 @@ type SiteContextValue = {
   updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>) => void;
   deleteSellerProduct: (productId: string) => void;
   updateSellerStock: (productId: string, stock: number) => void;
+  adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
+  adminDeleteUser: (userId: string) => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
 };
 
@@ -355,6 +357,64 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     updateSellerProduct(productId, { stock });
   };
 
+  const adminChangeUserRole = (userId: string, role: AccountRole) => {
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser.id === userId && role !== 'admin') return { ok: false, message: t('Tu ne peux pas retirer ton role admin.', 'You cannot remove your own admin role.') };
+
+    const targetUser = users.find((entry) => entry.id === userId);
+    if (!targetUser) return { ok: false, message: t('Utilisateur introuvable.', 'User not found.') };
+
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === userId
+          ? {
+              ...user,
+              role,
+              sellerId: role === 'seller' ? user.sellerId ?? `seller-${user.id}` : undefined
+            }
+          : user
+      )
+    );
+
+    if (role === 'seller' && !targetUser.sellerId) {
+      setSellers((current) => [
+        {
+          id: `seller-${targetUser.id}`,
+          slug: `${targetUser.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+          name: targetUser.name,
+          company: `${targetUser.name.split(' ')[0]} Store`,
+          email: targetUser.email,
+          password: targetUser.password,
+          phone: targetUser.phone,
+          country: targetUser.country,
+          city: targetUser.city,
+          verified: false,
+          about: 'Nouveau vendeur Min-shop.'
+        },
+        ...current
+      ]);
+    }
+
+    return { ok: true, message: t('Role mis a jour.', 'Role updated.') };
+  };
+
+  const adminDeleteUser = (userId: string) => {
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser.id === userId) return { ok: false, message: t('Tu ne peux pas supprimer ton propre compte.', 'You cannot delete your own account.') };
+
+    const target = users.find((entry) => entry.id === userId);
+    if (!target) return { ok: false, message: t('Utilisateur introuvable.', 'User not found.') };
+
+    setUsers((current) => current.filter((user) => user.id !== userId));
+
+    if (target.sellerId) {
+      setSellers((current) => current.filter((seller) => seller.id !== target.sellerId));
+      setProducts((current) => current.filter((product) => product.sellerId !== target.sellerId));
+    }
+
+    return { ok: true, message: t('Compte supprime.', 'Account deleted.') };
+  };
+
   const t = (fr: string, en: string) => (locale === 'fr' ? fr : en);
 
   return (
@@ -382,6 +442,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         updateSellerProduct,
         deleteSellerProduct,
         updateSellerStock,
+        adminChangeUserRole,
+        adminDeleteUser,
         t
       }}
     >

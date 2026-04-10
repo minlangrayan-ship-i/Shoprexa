@@ -24,7 +24,7 @@ export default function RegisterPage() {
       email: String(formData.get('email')),
       phone: String(formData.get('phone')),
       password: String(formData.get('password')),
-      role: String(formData.get('role')) as 'client' | 'seller' | 'admin',
+      role: String(formData.get('role')) as 'client' | 'seller',
       country: String(formData.get('country')),
       city: String(formData.get('city'))
     };
@@ -56,7 +56,6 @@ export default function RegisterPage() {
           <select required name="role" className="rounded-xl border px-3 py-2">
             <option value="client">{t('Client', 'Client')}</option>
             <option value="seller">{t('Vendeur', 'Seller')}</option>
-            <option value="admin">{t('Administrateur', 'Admin')}</option>
           </select>
 
           <select
