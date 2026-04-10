@@ -47,7 +47,7 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <p className="border-t border-white/10 py-4 text-center text-xs">? {new Date().getFullYear()} Min-shop. Tous droits reserves.</p>
+      <p className="border-t border-white/10 py-4 text-center text-xs">(c) {new Date().getFullYear()} Min-shop. Tous droits reserves.</p>
     </footer>
   );
 }
