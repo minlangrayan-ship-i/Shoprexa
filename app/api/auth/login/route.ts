@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { findUserByCredentials } from '@/lib/mock-marketplace';
+import { demoUsers, findUserByCredentials } from '@/lib/mock-marketplace';
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
 
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 });
   }
 
-  const user = findUserByCredentials(body.data.email, body.data.password);
+  const user = findUserByCredentials(demoUsers, body.data.email, body.data.password);
   if (!user) {
     return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
   }

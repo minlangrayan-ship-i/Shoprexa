@@ -1,32 +1,88 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { africaCountries } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { register, t } = useSite();
+  const [country, setCountry] = useState(africaCountries[0].country);
   const [status, setStatus] = useState('');
-  const { t } = useSite();
+  const [loading, setLoading] = useState(false);
+
+  const cities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus(
-      t(
-        'Inscription en mode demo: utilise les comptes fictifs deja disponibles sur la page Connexion.',
-        'Demo mode registration: please use the existing demo accounts listed on the Login page.'
-      )
-    );
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get('name')),
+      email: String(formData.get('email')),
+      phone: String(formData.get('phone')),
+      password: String(formData.get('password')),
+      role: String(formData.get('role')) as 'client' | 'seller' | 'admin',
+      country: String(formData.get('country')),
+      city: String(formData.get('city'))
+    };
+
+    const result = register(payload);
+    setStatus(result.message);
+    setLoading(false);
+
+    if (!result.ok || !result.user) return;
+    if (result.user.role === 'seller') router.push('/seller/dashboard');
+    else if (result.user.role === 'admin') router.push('/admin');
+    else router.push('/client/home');
   };
 
   return (
-    <section className="section py-12">
-      <h1 className="text-3xl font-bold">{t('Inscription', 'Register')}</h1>
-      <form onSubmit={onSubmit} className="card mt-6 max-w-md space-y-3 p-6">
-        <input required name="name" placeholder={t('Nom', 'Name')} className="w-full rounded-lg border px-3 py-2" />
-        <input required type="email" name="email" placeholder="Email" className="w-full rounded-lg border px-3 py-2" />
-        <input required type="password" name="password" placeholder={t('Mot de passe', 'Password')} className="w-full rounded-lg border px-3 py-2" />
-        <button className="rounded-xl bg-brand-600 px-4 py-2 text-white">{t('Creer un compte', 'Create account')}</button>
-        {status && <p className="text-sm">{status}</p>}
-      </form>
+    <section className="section py-14">
+      <div className="mx-auto max-w-2xl rounded-2xl border bg-white p-7 shadow-sm">
+        <h1 className="text-3xl font-bold">{t('Inscription ouverte', 'Open registration')}</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          {t('Creation de compte rapide et rassurante. Connexion Google/telephone pourra etre ajoutee ensuite.', 'Fast and trusted account creation. Google/phone login can be added later.')}
+        </p>
+
+        <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
+          <input required name="name" placeholder={t('Nom complet', 'Full name')} className="rounded-xl border px-3 py-2" />
+          <input required type="email" name="email" placeholder="Email" className="rounded-xl border px-3 py-2" />
+          <input required name="phone" placeholder={t('WhatsApp / Telephone', 'WhatsApp / Phone')} className="rounded-xl border px-3 py-2" />
+          <input required minLength={8} type="password" name="password" placeholder={t('Mot de passe (8+)', 'Password (8+)')} className="rounded-xl border px-3 py-2" />
+
+          <select required name="role" className="rounded-xl border px-3 py-2">
+            <option value="client">{t('Client', 'Client')}</option>
+            <option value="seller">{t('Vendeur', 'Seller')}</option>
+            <option value="admin">{t('Administrateur', 'Admin')}</option>
+          </select>
+
+          <select
+            required
+            name="country"
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            className="rounded-xl border px-3 py-2"
+          >
+            {africaCountries.map((entry) => (
+              <option key={entry.country} value={entry.country}>{entry.country}</option>
+            ))}
+          </select>
+
+          <select required name="city" className="rounded-xl border px-3 py-2 md:col-span-2">
+            {cities.map((entry) => (
+              <option key={entry} value={entry}>{entry}</option>
+            ))}
+          </select>
+
+          <button disabled={loading} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white md:col-span-2">
+            {loading ? t('Creation...', 'Creating...') : t('Creer mon compte', 'Create my account')}
+          </button>
+          {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
+        </form>
+      </div>
     </section>
   );
 }

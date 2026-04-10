@@ -1,3 +1,5 @@
+export type AccountRole = 'client' | 'seller' | 'admin';
+
 export type CountryOption = {
   country: string;
   cities: string[];
@@ -10,9 +12,12 @@ export type MarketplaceSeller = {
   company: string;
   email: string;
   password: string;
+  phone: string;
   country: string;
   city: string;
   verified: boolean;
+  about: string;
+  logoUrl?: string;
 };
 
 export type Dropshipper = {
@@ -32,7 +37,7 @@ export type MarketplaceProduct = {
   price: number;
   oldPrice: number | null;
   stock: number;
-  image: string;
+  images: string[];
   category: string;
   categorySlug: string;
   problemTag: string;
@@ -40,6 +45,9 @@ export type MarketplaceProduct = {
   companyName: string;
   sellerCountry: string;
   sellerCity: string;
+  badges: Array<'new' | 'popular' | 'low_stock'>;
+  averageRating: number;
+  viewCount: number;
 };
 
 export type SellerReview = {
@@ -51,16 +59,32 @@ export type SellerReview = {
   createdAt: string;
 };
 
+export type SellerOrder = {
+  id: string;
+  sellerId: string;
+  productId: string;
+  customerName: string;
+  quantity: number;
+  total: number;
+  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered';
+  createdAt: string;
+};
+
 export type DemoUser = {
   id: string;
   name: string;
   email: string;
   password: string;
-  role: 'client' | 'seller' | 'admin';
+  role: AccountRole;
   country: string;
   city: string;
+  phone: string;
+  avatar?: string;
   sellerId?: string;
 };
+
+export const defaultAvatar =
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80&auto=format&fit=crop';
 
 export const africaCountries: CountryOption[] = [
   { country: 'Cameroun', cities: ['Yaounde', 'Douala', 'Bafoussam'] },
@@ -72,6 +96,15 @@ export const africaCountries: CountryOption[] = [
   { country: 'Kenya', cities: ['Nairobi', 'Mombasa', 'Kisumu'] }
 ];
 
+export const marketplaceCategories = [
+  { label: 'Energie', slug: 'energie' },
+  { label: 'Cuisine', slug: 'cuisine' },
+  { label: 'Securite', slug: 'securite' },
+  { label: 'Mobilite', slug: 'mobilite' },
+  { label: 'Fitness', slug: 'fitness' },
+  { label: 'Organisation', slug: 'organisation' }
+];
+
 export const sellerProfiles: MarketplaceSeller[] = [
   {
     id: 'seller-1',
@@ -80,9 +113,11 @@ export const sellerProfiles: MarketplaceSeller[] = [
     company: 'Sahel Energy Tools',
     email: 'mireille@saheltools.cm',
     password: 'SellerMireille123',
+    phone: '+237 671000111',
     country: 'Cameroun',
     city: 'Yaounde',
-    verified: true
+    verified: true,
+    about: 'Solutions energie et cuisine pour foyers, etudiants et petits commerces.'
   },
   {
     id: 'seller-2',
@@ -91,9 +126,11 @@ export const sellerProfiles: MarketplaceSeller[] = [
     company: 'Secure Home West',
     email: 'ibrahim@securehome.ci',
     password: 'SellerIbrahim123',
+    phone: '+225 0102030405',
     country: 'Cote d\'Ivoire',
     city: 'Abidjan',
-    verified: true
+    verified: true,
+    about: 'Equipements securite et organisation pour familles et commerces urbains.'
   },
   {
     id: 'seller-3',
@@ -102,9 +139,11 @@ export const sellerProfiles: MarketplaceSeller[] = [
     company: 'Urban Mobility Lab',
     email: 'linda@uml.ng',
     password: 'SellerLinda123',
+    phone: '+234 8030001111',
     country: 'Nigeria',
     city: 'Lagos',
-    verified: true
+    verified: true,
+    about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.'
   }
 ];
 
@@ -115,7 +154,7 @@ export const dropshippers: Dropshipper[] = [
     email: 'contact@atlasdrop.africa',
     country: 'Senegal',
     city: 'Dakar',
-    productIds: ['prod-1', 'prod-2', 'prod-7', 'prod-10']
+    productIds: ['prod-1', 'prod-2', 'prod-7', 'prod-10', 'prod-14']
   },
   {
     id: 'drop-2',
@@ -123,9 +162,47 @@ export const dropshippers: Dropshipper[] = [
     email: 'ops@nilehub.africa',
     country: 'Kenya',
     city: 'Nairobi',
-    productIds: ['prod-5', 'prod-8', 'prod-12', 'prod-17']
+    productIds: ['prod-5', 'prod-8', 'prod-12', 'prod-17', 'prod-18']
   }
 ];
+
+const imageSets = {
+  solar: [
+    'https://images.unsplash.com/photo-1509395176047-4a66953fd231?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1497449493050-aad1e7cad165?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=1400&q=85&auto=format&fit=crop'
+  ],
+  power: [
+    'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1587033411391-5d9e51cce126?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1622445275576-721325763afe?w=1400&q=85&auto=format&fit=crop'
+  ],
+  kitchen: [
+    'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1585515656191-9b37ec30f6d0?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1400&q=85&auto=format&fit=crop'
+  ],
+  security: [
+    'https://images.unsplash.com/photo-1558002038-1055907df827?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1557324232-b8917d04d3f7?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1558002038-0f75cf2330ef?w=1400&q=85&auto=format&fit=crop'
+  ],
+  mobility: [
+    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1604868189265-219ba7bf7ea7?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=1400&q=85&auto=format&fit=crop'
+  ],
+  fitness: [
+    'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1596357395217-80de13130e92?w=1400&q=85&auto=format&fit=crop'
+  ],
+  organization: [
+    'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?w=1400&q=85&auto=format&fit=crop'
+  ]
+};
 
 export const marketplaceProducts: MarketplaceProduct[] = [
   {
@@ -136,14 +213,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 18500,
     oldPrice: 22500,
     stock: 34,
-    image: 'https://images.unsplash.com/photo-1509395176047-4a66953fd231?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.solar,
     category: 'Energie',
     categorySlug: 'energie',
     problemTag: 'Coupures d\'electricite',
     sellerId: 'seller-1',
     companyName: 'CamSun Energy',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: ['popular'],
+    averageRating: 4.7,
+    viewCount: 492
   },
   {
     id: 'prod-2',
@@ -153,31 +233,37 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 24500,
     oldPrice: null,
     stock: 42,
-    image: 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.power,
     category: 'Energie',
     categorySlug: 'energie',
     problemTag: 'Autonomie mobile',
     sellerId: 'seller-1',
     companyName: 'Yaounde Power Hub',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: ['popular'],
+    averageRating: 4.6,
+    viewCount: 403
   },
   {
     id: 'prod-3',
     slug: 'mixeur-portable-usb',
-    name: 'Mixeur portable USB',
-    description: 'Prepare jus et sauces sans prise secteur.',
+    name: 'Mini mixeur portable USB',
+    description: 'Prepare jus et sauces sans prise secteur, ideal etudiants.',
     price: 15900,
     oldPrice: 19900,
     stock: 28,
-    image: 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.kitchen,
     category: 'Cuisine',
     categorySlug: 'cuisine',
     problemTag: 'Cuisine rapide',
     sellerId: 'seller-1',
     companyName: 'Kitchen Nova CM',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: ['new'],
+    averageRating: 4.4,
+    viewCount: 251
   },
   {
     id: 'prod-4',
@@ -187,14 +273,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 13900,
     oldPrice: null,
     stock: 19,
-    image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.kitchen,
     category: 'Cuisine',
     categorySlug: 'cuisine',
     problemTag: 'Cuisine quotidienne',
     sellerId: 'seller-1',
     companyName: 'Gaz Smart Home',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: [],
+    averageRating: 4.3,
+    viewCount: 174
   },
   {
     id: 'prod-5',
@@ -204,14 +293,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 17200,
     oldPrice: 21000,
     stock: 25,
-    image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.security,
     category: 'Securite',
     categorySlug: 'securite',
     problemTag: 'Protection maison',
     sellerId: 'seller-2',
     companyName: 'Abidjan SafeTech',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: ['popular'],
+    averageRating: 4.8,
+    viewCount: 522
   },
   {
     id: 'prod-6',
@@ -221,14 +313,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 35900,
     oldPrice: 39900,
     stock: 14,
-    image: 'https://images.unsplash.com/photo-1557324232-b8917d04d3f7?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.security,
     category: 'Securite',
     categorySlug: 'securite',
     problemTag: 'Surveillance',
     sellerId: 'seller-2',
     companyName: 'Ivoire Vision Guard',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: ['new'],
+    averageRating: 4.5,
+    viewCount: 298
   },
   {
     id: 'prod-7',
@@ -238,14 +333,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 42900,
     oldPrice: null,
     stock: 11,
-    image: 'https://images.unsplash.com/photo-1558002038-c6d5f2c4c0f9?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.security,
     category: 'Securite',
     categorySlug: 'securite',
     problemTag: 'Controle acces',
     sellerId: 'seller-2',
     companyName: 'LockPro Afrique',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: ['low_stock'],
+    averageRating: 4.4,
+    viewCount: 241
   },
   {
     id: 'prod-8',
@@ -255,14 +353,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 12800,
     oldPrice: 14900,
     stock: 31,
-    image: 'https://images.unsplash.com/photo-1616628182509-6f1177b16f11?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.security,
     category: 'Securite',
     categorySlug: 'securite',
     problemTag: 'Prevention incendie',
     sellerId: 'seller-2',
     companyName: 'FireShield CI',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: [],
+    averageRating: 4.2,
+    viewCount: 180
   },
   {
     id: 'prod-9',
@@ -272,14 +373,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 689000,
     oldPrice: 735000,
     stock: 6,
-    image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.mobility,
     category: 'Mobilite',
     categorySlug: 'mobilite',
     problemTag: 'Transport urbain',
     sellerId: 'seller-3',
     companyName: 'Lagos RideX',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: ['low_stock', 'popular'],
+    averageRating: 4.9,
+    viewCount: 601
   },
   {
     id: 'prod-10',
@@ -289,14 +393,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 212000,
     oldPrice: null,
     stock: 9,
-    image: 'https://images.unsplash.com/photo-1604868189265-219ba7bf7ea7?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.mobility,
     category: 'Mobilite',
     categorySlug: 'mobilite',
     problemTag: 'Embouteillages',
     sellerId: 'seller-3',
     companyName: 'SwiftMove NG',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: ['low_stock'],
+    averageRating: 4.6,
+    viewCount: 329
   },
   {
     id: 'prod-11',
@@ -306,14 +413,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 18900,
     oldPrice: 23000,
     stock: 23,
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.fitness,
     category: 'Fitness',
     categorySlug: 'fitness',
     problemTag: 'Bien-etre',
     sellerId: 'seller-3',
     companyName: 'FitPulse Lagos',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: ['new'],
+    averageRating: 4.3,
+    viewCount: 216
   },
   {
     id: 'prod-12',
@@ -323,14 +433,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 46500,
     oldPrice: null,
     stock: 17,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.fitness,
     category: 'Fitness',
     categorySlug: 'fitness',
     problemTag: 'Suivi sante',
     sellerId: 'seller-3',
     companyName: 'VitalTrack NG',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: [],
+    averageRating: 4.5,
+    viewCount: 272
   },
   {
     id: 'prod-13',
@@ -340,14 +453,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 21900,
     oldPrice: 25900,
     stock: 26,
-    image: 'https://images.unsplash.com/photo-1536895058696-a69b1c7ba34f?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.solar,
     category: 'Energie',
     categorySlug: 'energie',
     problemTag: 'Eclairage exterieur',
     sellerId: 'seller-1',
     companyName: 'Solar Street Yaounde',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: ['popular'],
+    averageRating: 4.6,
+    viewCount: 340
   },
   {
     id: 'prod-14',
@@ -357,31 +473,37 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 52900,
     oldPrice: 59900,
     stock: 15,
-    image: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.kitchen,
     category: 'Cuisine',
     categorySlug: 'cuisine',
     problemTag: 'Cuisine saine',
     sellerId: 'seller-1',
     companyName: 'AirChef Afrique',
     sellerCountry: 'Cameroun',
-    sellerCity: 'Yaounde'
+    sellerCity: 'Yaounde',
+    badges: ['new'],
+    averageRating: 4.7,
+    viewCount: 447
   },
   {
     id: 'prod-15',
-    slug: 'kit-ustensiles-gadgets-8pcs',
-    name: 'Kit gadgets cuisine 8pcs',
-    description: 'Gadgets pratiques pour cuisiner vite en famille.',
+    slug: 'boite-rangement-modulaire',
+    name: 'Boite rangement modulaire',
+    description: 'Organisation simple pour chambre et petit commerce.',
     price: 11800,
     oldPrice: null,
     stock: 39,
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=80&auto=format&fit=crop',
-    category: 'Cuisine',
-    categorySlug: 'cuisine',
-    problemTag: 'Gain de temps',
+    images: imageSets.organization,
+    category: 'Organisation',
+    categorySlug: 'organisation',
+    problemTag: 'Gain de place',
     sellerId: 'seller-2',
     companyName: 'Cuisine Plus Abidjan',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: ['popular'],
+    averageRating: 4.4,
+    viewCount: 386
   },
   {
     id: 'prod-16',
@@ -391,14 +513,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 27400,
     oldPrice: 31900,
     stock: 21,
-    image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.mobility,
     category: 'Mobilite',
     categorySlug: 'mobilite',
     problemTag: 'Securite routiere',
     sellerId: 'seller-3',
     companyName: 'RideSafe Gear',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: [],
+    averageRating: 4.5,
+    viewCount: 245
   },
   {
     id: 'prod-17',
@@ -408,14 +533,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 14500,
     oldPrice: 17800,
     stock: 33,
-    image: 'https://images.unsplash.com/photo-1596357395217-80de13130e92?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.fitness,
     category: 'Fitness',
     categorySlug: 'fitness',
     problemTag: 'Sport maison',
     sellerId: 'seller-3',
     companyName: 'CardioFlex Afrique',
     sellerCountry: 'Nigeria',
-    sellerCity: 'Lagos'
+    sellerCity: 'Lagos',
+    badges: ['popular'],
+    averageRating: 4.3,
+    viewCount: 271
   },
   {
     id: 'prod-18',
@@ -425,14 +553,17 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     price: 64900,
     oldPrice: null,
     stock: 8,
-    image: 'https://images.unsplash.com/photo-1558002038-0f75cf2330ef?w=1200&q=80&auto=format&fit=crop',
+    images: imageSets.security,
     category: 'Securite',
     categorySlug: 'securite',
     problemTag: 'Protection business',
     sellerId: 'seller-2',
     companyName: 'CoffreSure West',
     sellerCountry: 'Cote d\'Ivoire',
-    sellerCity: 'Abidjan'
+    sellerCity: 'Abidjan',
+    badges: ['low_stock'],
+    averageRating: 4.8,
+    viewCount: 434
   }
 ];
 
@@ -445,6 +576,21 @@ export const seededReviews: SellerReview[] = [
   { id: 'rev-6', sellerId: 'seller-3', customerName: 'Sophie', rating: 4, comment: 'Montre fitness conforme.', createdAt: '2026-03-11' }
 ];
 
+export const seededSellerOrders: SellerOrder[] = [
+  { id: 'ord-1', sellerId: 'seller-1', productId: 'prod-1', customerName: 'Jean', quantity: 2, total: 37000, status: 'delivered', createdAt: '2026-04-07' },
+  { id: 'ord-2', sellerId: 'seller-1', productId: 'prod-14', customerName: 'Mimi', quantity: 1, total: 52900, status: 'processing', createdAt: '2026-04-08' },
+  { id: 'ord-3', sellerId: 'seller-2', productId: 'prod-5', customerName: 'Koffi', quantity: 3, total: 51600, status: 'paid', createdAt: '2026-04-08' },
+  { id: 'ord-4', sellerId: 'seller-2', productId: 'prod-18', customerName: 'Ruth', quantity: 1, total: 64900, status: 'shipped', createdAt: '2026-04-09' },
+  { id: 'ord-5', sellerId: 'seller-3', productId: 'prod-9', customerName: 'Tunde', quantity: 1, total: 689000, status: 'delivered', createdAt: '2026-04-06' },
+  { id: 'ord-6', sellerId: 'seller-3', productId: 'prod-17', customerName: 'Ayo', quantity: 2, total: 29000, status: 'pending', createdAt: '2026-04-09' }
+];
+
+export const seededSellerViews: Record<string, number[]> = {
+  'seller-1': [120, 140, 170, 190, 210, 260, 290],
+  'seller-2': [110, 130, 150, 180, 200, 230, 270],
+  'seller-3': [150, 170, 210, 250, 300, 340, 390]
+};
+
 export const demoUsers: DemoUser[] = [
   {
     id: 'admin-1',
@@ -453,7 +599,9 @@ export const demoUsers: DemoUser[] = [
     password: 'MinShopAdmin2026!',
     role: 'admin',
     country: 'Cameroun',
-    city: 'Yaounde'
+    city: 'Yaounde',
+    phone: '+237 692714985',
+    avatar: defaultAvatar
   },
   {
     id: 'client-1',
@@ -462,7 +610,9 @@ export const demoUsers: DemoUser[] = [
     password: 'ClientAline123',
     role: 'client',
     country: 'Cameroun',
-    city: 'Yaounde'
+    city: 'Yaounde',
+    phone: '+237 671111222',
+    avatar: defaultAvatar
   },
   {
     id: 'client-2',
@@ -471,7 +621,9 @@ export const demoUsers: DemoUser[] = [
     password: 'ClientCheikh123',
     role: 'client',
     country: 'Senegal',
-    city: 'Dakar'
+    city: 'Dakar',
+    phone: '+221 770001122',
+    avatar: defaultAvatar
   },
   ...sellerProfiles.map((seller) => ({
     id: `user-${seller.id}`,
@@ -481,16 +633,10 @@ export const demoUsers: DemoUser[] = [
     role: 'seller' as const,
     country: seller.country,
     city: seller.city,
+    phone: seller.phone,
+    avatar: defaultAvatar,
     sellerId: seller.id
   }))
-];
-
-export const marketplaceCategories = [
-  { label: 'Energie', slug: 'energie' },
-  { label: 'Cuisine', slug: 'cuisine' },
-  { label: 'Securite', slug: 'securite' },
-  { label: 'Mobilite', slug: 'mobilite' },
-  { label: 'Fitness', slug: 'fitness' }
 ];
 
 export function getAverageRating(reviews: SellerReview[], sellerId: string) {
@@ -500,24 +646,8 @@ export function getAverageRating(reviews: SellerReview[], sellerId: string) {
   return Number((total / sellerReviews.length).toFixed(1));
 }
 
-export function getSellerProducts(sellerId: string) {
-  return marketplaceProducts.filter((product) => product.sellerId === sellerId);
-}
-
-export function getProductsForLocation(country: string, city?: string) {
-  return marketplaceProducts.filter((product) => {
-    if (product.sellerCountry !== country) return false;
-    if (!city) return true;
-    return product.sellerCity === city;
-  });
-}
-
-export function getSellersForLocation(country: string, city?: string) {
-  return sellerProfiles.filter((seller) => {
-    if (seller.country !== country) return false;
-    if (!city) return true;
-    return seller.city === city;
-  });
+export function getSellerProducts(products: MarketplaceProduct[], sellerId: string) {
+  return products.filter((product) => product.sellerId === sellerId);
 }
 
 export function rankSellersByRating(reviews: SellerReview[], country?: string, city?: string) {
@@ -536,24 +666,34 @@ export function rankSellersByRating(reviews: SellerReview[], country?: string, c
     .sort((a, b) => b.averageRating - a.averageRating || b.reviewCount - a.reviewCount);
 }
 
-export function getSellerDashboardData(sellerId: string, reviews: SellerReview[]) {
-  const products = getSellerProducts(sellerId);
-  const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
-  const simulatedSales = products.reduce((sum, product) => sum + Math.max(3, Math.round((40 - product.stock) / 2)), 0);
-  const revenue = products.reduce((sum, product) => sum + product.price * Math.max(3, Math.round((40 - product.stock) / 2)), 0);
-  const sellerReviews = reviews.filter((review) => review.sellerId === sellerId);
+export function getSellerDashboardData(
+  sellerId: string,
+  products: MarketplaceProduct[],
+  reviews: SellerReview[],
+  orders: SellerOrder[]
+) {
+  const sellerProducts = getSellerProducts(products, sellerId);
+  const sellerOrders = orders.filter((order) => order.sellerId === sellerId);
+  const totalStock = sellerProducts.reduce((sum, product) => sum + product.stock, 0);
+  const lowStock = sellerProducts.filter((product) => product.stock <= 10).length;
+  const revenue = sellerOrders.reduce((sum, order) => sum + order.total, 0);
+  const averageRating = getAverageRating(reviews, sellerId);
 
   return {
-    products,
+    products: sellerProducts,
+    orders: sellerOrders,
     totalStock,
-    simulatedSales,
+    lowStock,
     revenue,
-    sellerReviews,
-    averageRating: getAverageRating(reviews, sellerId)
+    averageRating,
+    reviewCount: reviews.filter((review) => review.sellerId === sellerId).length
   };
 }
 
-export function findUserByCredentials(email: string, password: string) {
-  return demoUsers.find((user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password) ?? null;
+export function findUserByCredentials(users: DemoUser[], email: string, password: string) {
+  return users.find((user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password) ?? null;
 }
 
+export function findSellerBySlug(slug: string) {
+  return sellerProfiles.find((seller) => seller.slug === slug) ?? null;
+}

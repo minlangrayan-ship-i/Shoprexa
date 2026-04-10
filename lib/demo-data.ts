@@ -23,6 +23,8 @@ export type DemoProduct = {
     country: string;
     city: string;
   };
+  badges: Array<'new' | 'popular' | 'low_stock'>;
+  averageRating: number;
 };
 
 export const demoCategories: DemoCategory[] = marketplaceCategories.map((category, index) => ({
@@ -42,12 +44,14 @@ export const demoProducts: DemoProduct[] = marketplaceProducts.map((product, ind
   oldPrice: product.oldPrice,
   stock: product.stock,
   featured: index < 8,
-  images: [product.image],
+  images: product.images,
   category: categoryBySlug[product.categorySlug] ?? demoCategories[0],
   seller: {
     id: product.sellerId,
     companyName: product.companyName,
     country: product.sellerCountry,
     city: product.sellerCity
-  }
+  },
+  badges: product.badges,
+  averageRating: product.averageRating
 }));

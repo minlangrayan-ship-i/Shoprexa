@@ -3,16 +3,44 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   africaCountries,
+  defaultAvatar,
   demoUsers,
   findUserByCredentials,
+  marketplaceProducts,
   seededReviews,
+  seededSellerOrders,
+  sellerProfiles,
+  type AccountRole,
   type DemoUser,
+  type MarketplaceProduct,
+  type MarketplaceSeller,
+  type SellerOrder,
   type SellerReview
 } from '@/lib/mock-marketplace';
 
 type Locale = 'fr' | 'en';
 
-type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'sellerId'>;
+type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId'>;
+
+type RegisterPayload = {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: AccountRole;
+  country: string;
+  city: string;
+};
+
+type ProfileUpdatePayload = {
+  name: string;
+  phone: string;
+  country: string;
+  city: string;
+  avatar?: string;
+  company?: string;
+  about?: string;
+};
 
 type SiteContextValue = {
   locale: Locale;
@@ -23,15 +51,31 @@ type SiteContextValue = {
   setCountry: (country: string) => void;
   setCity: (city: string) => void;
   sessionUser: SessionUser | null;
-  login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
-  logout: () => void;
+  users: DemoUser[];
+  sellers: MarketplaceSeller[];
+  products: MarketplaceProduct[];
+  orders: SellerOrder[];
   reviews: SellerReview[];
+  login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
+  register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
+  logout: () => void;
+  updateProfile: (payload: ProfileUpdatePayload) => { ok: boolean; message: string };
   addReview: (review: Omit<SellerReview, 'id' | 'createdAt'>) => void;
+  addSellerProduct: (payload: {
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    categorySlug: string;
+    images: string[];
+  }) => { ok: boolean; message: string };
+  updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>) => void;
+  deleteSellerProduct: (productId: string) => void;
+  updateSellerStock: (productId: string, stock: number) => void;
   t: (fr: string, en: string) => string;
-  demoAccounts: DemoUser[];
 };
 
-const STORAGE_KEY = 'min-shop-site-context-v1';
+const STORAGE_KEY = 'min-shop-site-context-v3';
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 
@@ -40,6 +84,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [country, setCountryState] = useState<string>(africaCountries[0].country);
   const [city, setCityState] = useState<string>(africaCountries[0].cities[0]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [users, setUsers] = useState<DemoUser[]>(demoUsers);
+  const [sellers, setSellers] = useState<MarketplaceSeller[]>(sellerProfiles);
+  const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
+  const [orders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
 
   useEffect(() => {
@@ -52,6 +100,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         country?: string;
         city?: string;
         sessionUser?: SessionUser | null;
+        users?: DemoUser[];
+        sellers?: MarketplaceSeller[];
+        products?: MarketplaceProduct[];
         reviews?: SellerReview[];
       };
 
@@ -59,6 +110,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.country) setCountryState(parsed.country);
       if (parsed.city) setCityState(parsed.city);
       if (parsed.sessionUser) setSessionUser(parsed.sessionUser);
+      if (parsed.users?.length) setUsers(parsed.users);
+      if (parsed.sellers?.length) setSellers(parsed.sellers);
+      if (parsed.products?.length) setProducts(parsed.products);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
     } catch {
       // Ignore localStorage parsing errors.
@@ -66,12 +120,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, reviews }));
-  }, [locale, country, city, sessionUser, reviews]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews }));
+  }, [locale, country, city, sessionUser, users, sellers, products, reviews]);
 
-  const availableCities = useMemo(() => {
-    return africaCountries.find((entry) => entry.country === country)?.cities ?? [];
-  }, [country]);
+  const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
   useEffect(() => {
     if (!availableCities.includes(city) && availableCities.length > 0) {
@@ -85,32 +137,136 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (cities.length > 0) setCityState(cities[0]);
   };
 
+  const mapSession = (user: DemoUser): SessionUser => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    country: user.country,
+    city: user.city,
+    phone: user.phone,
+    avatar: user.avatar ?? defaultAvatar,
+    sellerId: user.sellerId
+  });
+
   const login = (email: string, password: string) => {
-    const user = findUserByCredentials(email, password);
+    const user = findUserByCredentials(users, email, password);
     if (!user) return { ok: false, message: locale === 'fr' ? 'Identifiants invalides.' : 'Invalid credentials.' };
 
-    const session: SessionUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      country: user.country,
-      city: user.city,
-      sellerId: user.sellerId
-    };
-
+    const session = mapSession(user);
     setSessionUser(session);
     setCountryState(user.country);
     setCityState(user.city);
 
-    return {
-      ok: true,
-      message: locale === 'fr' ? `Bienvenue ${user.name}` : `Welcome ${user.name}`,
-      user: session
+    return { ok: true, message: locale === 'fr' ? `Bienvenue ${user.name}` : `Welcome ${user.name}`, user: session };
+  };
+
+  const register = (payload: RegisterPayload) => {
+    if (!payload.name.trim()) return { ok: false, message: t('Nom requis.', 'Name is required.') };
+    if (!payload.email.includes('@')) return { ok: false, message: t('Email invalide.', 'Invalid email.') };
+    if (payload.password.length < 8) return { ok: false, message: t('Mot de passe trop court (8+).', 'Password too short (8+).') };
+    if (!payload.phone.trim()) return { ok: false, message: t('Telephone requis.', 'Phone is required.') };
+
+    const exists = users.some((user) => user.email.toLowerCase() === payload.email.toLowerCase());
+    if (exists) return { ok: false, message: t('Cet email existe deja.', 'This email already exists.') };
+
+    const userId = `user-${Date.now()}`;
+    const sellerId = payload.role === 'seller' ? `seller-${Date.now()}` : undefined;
+
+    const nextUser: DemoUser = {
+      id: userId,
+      name: payload.name,
+      email: payload.email,
+      password: payload.password,
+      role: payload.role,
+      country: payload.country,
+      city: payload.city,
+      phone: payload.phone,
+      avatar: defaultAvatar,
+      sellerId
     };
+
+    setUsers((current) => [nextUser, ...current]);
+
+    if (payload.role === 'seller' && sellerId) {
+      setSellers((current) => [
+        {
+          id: sellerId,
+          slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+          name: payload.name,
+          company: `${payload.name.split(' ')[0]} Store`,
+          email: payload.email,
+          password: payload.password,
+          phone: payload.phone,
+          country: payload.country,
+          city: payload.city,
+          verified: false,
+          about: 'Nouveau vendeur Min-shop.'
+        },
+        ...current
+      ]);
+    }
+
+    const session = mapSession(nextUser);
+    setSessionUser(session);
+
+    return { ok: true, message: t('Compte cree avec succes.', 'Account created successfully.'), user: session };
   };
 
   const logout = () => setSessionUser(null);
+
+  const updateProfile = (payload: ProfileUpdatePayload) => {
+    if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
+
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === sessionUser.id
+          ? {
+              ...user,
+              name: payload.name,
+              phone: payload.phone,
+              country: payload.country,
+              city: payload.city,
+              avatar: payload.avatar ?? user.avatar
+            }
+          : user
+      )
+    );
+
+    if (sessionUser.sellerId) {
+      setSellers((current) =>
+        current.map((seller) =>
+          seller.id === sessionUser.sellerId
+            ? {
+                ...seller,
+                name: payload.name,
+                phone: payload.phone,
+                country: payload.country,
+                city: payload.city,
+                company: payload.company ?? seller.company,
+                about: payload.about ?? seller.about,
+                logoUrl: payload.avatar ?? seller.logoUrl
+              }
+            : seller
+        )
+      );
+    }
+
+    setSessionUser((current) =>
+      current
+        ? {
+            ...current,
+            name: payload.name,
+            phone: payload.phone,
+            country: payload.country,
+            city: payload.city,
+            avatar: payload.avatar ?? current.avatar
+          }
+        : current
+    );
+
+    return { ok: true, message: t('Profil mis a jour.', 'Profile updated.') };
+  };
 
   const addReview = (review: Omit<SellerReview, 'id' | 'createdAt'>) => {
     setReviews((current) => [
@@ -121,6 +277,82 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       },
       ...current
     ]);
+  };
+
+  const addSellerProduct = (payload: {
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    categorySlug: string;
+    images: string[];
+  }) => {
+    if (!sessionUser?.sellerId) return { ok: false, message: t('Acces vendeur requis.', 'Seller access required.') };
+
+    const seller = sellers.find((entry) => entry.id === sessionUser.sellerId);
+    if (!seller) return { ok: false, message: t('Profil vendeur introuvable.', 'Seller profile not found.') };
+
+    const categoryLabel = {
+      energie: 'Energie',
+      cuisine: 'Cuisine',
+      securite: 'Securite',
+      mobilite: 'Mobilite',
+      fitness: 'Fitness',
+      organisation: 'Organisation'
+    }[payload.categorySlug] ?? 'Divers';
+
+    const product: MarketplaceProduct = {
+      id: `prod-${Date.now()}`,
+      slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-4)}`,
+      name: payload.name,
+      description: payload.description,
+      price: payload.price,
+      oldPrice: null,
+      stock: payload.stock,
+      images: payload.images.length ? payload.images : [
+        'https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'
+      ],
+      category: categoryLabel,
+      categorySlug: payload.categorySlug,
+      problemTag: 'Produit vendeur',
+      sellerId: seller.id,
+      companyName: seller.company,
+      sellerCountry: seller.country,
+      sellerCity: seller.city,
+      badges: ['new'],
+      averageRating: 4.0,
+      viewCount: 0
+    };
+
+    setProducts((current) => [product, ...current]);
+    return { ok: true, message: t('Produit ajoute.', 'Product added.') };
+  };
+
+  const updateSellerProduct = (
+    productId: string,
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>
+  ) => {
+    if (!sessionUser?.sellerId) return;
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === productId && product.sellerId === sessionUser.sellerId
+          ? {
+              ...product,
+              ...payload,
+              badges: (payload.stock ?? product.stock) <= 10 ? Array.from(new Set([...product.badges, 'low_stock'])) : product.badges.filter((badge) => badge !== 'low_stock')
+            }
+          : product
+      )
+    );
+  };
+
+  const deleteSellerProduct = (productId: string) => {
+    if (!sessionUser?.sellerId) return;
+    setProducts((current) => current.filter((product) => !(product.id === productId && product.sellerId === sessionUser.sellerId)));
+  };
+
+  const updateSellerStock = (productId: string, stock: number) => {
+    updateSellerProduct(productId, { stock });
   };
 
   const t = (fr: string, en: string) => (locale === 'fr' ? fr : en);
@@ -136,12 +368,21 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         setCountry,
         setCity: setCityState,
         sessionUser,
-        login,
-        logout,
+        users,
+        sellers,
+        products,
+        orders,
         reviews,
+        login,
+        register,
+        logout,
+        updateProfile,
         addReview,
-        t,
-        demoAccounts: demoUsers
+        addSellerProduct,
+        updateSellerProduct,
+        deleteSellerProduct,
+        updateSellerStock,
+        t
       }}
     >
       {children}

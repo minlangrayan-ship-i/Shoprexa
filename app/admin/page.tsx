@@ -1,10 +1,9 @@
 'use client';
 
-import { demoUsers, sellerProfiles } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function AdminPage() {
-  const { sessionUser, t } = useSite();
+  const { sessionUser, users, sellers, t } = useSite();
 
   if (!sessionUser || sessionUser.role !== 'admin') {
     return (
@@ -19,8 +18,8 @@ export default function AdminPage() {
     );
   }
 
-  const clientAccounts = demoUsers.filter((user) => user.role === 'client');
-  const sellerAccounts = demoUsers.filter((user) => user.role === 'seller');
+  const clientAccounts = users.filter((user) => user.role === 'client');
+  const sellerAccounts = users.filter((user) => user.role === 'seller');
 
   return (
     <section className="section space-y-8 py-12">
@@ -58,7 +57,7 @@ export default function AdminPage() {
       <div className="card p-5">
         <h2 className="text-xl font-semibold">Fiches vendeurs verifiees</h2>
         <ul className="mt-3 grid gap-3 md:grid-cols-3">
-          {sellerProfiles.map((seller) => (
+          {sellers.map((seller) => (
             <li key={seller.id} className="rounded-lg border p-3 text-sm">
               <p className="font-semibold">{seller.company}</p>
               <p>{seller.name}</p>
