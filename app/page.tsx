@@ -44,7 +44,7 @@ export default function HomePage() {
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
             <p className="mb-4 inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">{t('Marketplace africaine premium', 'Premium African marketplace')}</p>
-            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prets a convertir.', 'High-converting products for everyday life in Africa.')}</h1>
+            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, penses pour l Afrique.', 'The best everyday products, built for African realities.')}</h1>
             <p className="mt-5 text-slate-600">{t('Catalogue visuel optimise pour', 'Visual-first catalog optimized for')} {city}, {country}. {t('Images nettes, vendeurs verifies, parcours rapide.', 'Sharp images, verified sellers, frictionless checkout flow.')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white">{t('Voir le catalogue', 'Browse catalog')}</Link>
