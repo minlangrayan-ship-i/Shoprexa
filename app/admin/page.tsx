@@ -1,25 +1,72 @@
-export const dynamic = 'force-dynamic';
+'use client';
 
-import { prisma } from '@/lib/prisma';
-import { AdminProductManager } from '@/components/admin-product-manager';
+import { demoUsers, sellerProfiles } from '@/lib/mock-marketplace';
+import { useSite } from '@/components/site-context';
 
-export default async function AdminPage() {
-  const [products, orders, messages, applications, categories] = await Promise.all([
-    prisma.product.findMany({ include: { category: true }, take: 20, orderBy: { createdAt: 'desc' } }),
-    prisma.order.findMany({ take: 10, orderBy: { createdAt: 'desc' } }),
-    prisma.contactMessage.findMany({ take: 10, orderBy: { createdAt: 'desc' } }),
-    prisma.sellerApplication.findMany({ take: 10, orderBy: { createdAt: 'desc' } }),
-    prisma.category.findMany({ orderBy: { name: 'asc' } })
-  ]);
+export default function AdminPage() {
+  const { sessionUser, t } = useSite();
+
+  if (!sessionUser || sessionUser.role !== 'admin') {
+    return (
+      <section className="section py-12">
+        <div className="card p-6">
+          <h1 className="text-2xl font-bold">{t('Acces refuse', 'Access denied')}</h1>
+          <p className="mt-2 text-slate-600">
+            {t('Seule la session admin peut voir les donnees clients et vendeurs.', 'Only the admin session can view clients and vendors data.')}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const clientAccounts = demoUsers.filter((user) => user.role === 'client');
+  const sellerAccounts = demoUsers.filter((user) => user.role === 'seller');
 
   return (
     <section className="section space-y-8 py-12">
       <h1 className="text-3xl font-bold">Dashboard Admin</h1>
-      <AdminProductManager initialProducts={products.map((p) => ({ ...p, price: Number(p.price) }))} categories={categories} />
-      <div className="card p-5"><h2 className="text-xl font-semibold">Commandes</h2><ul className="mt-3 space-y-2 text-sm">{orders.map((o) => <li key={o.id} className="flex justify-between border-b pb-2"><span>{o.customerName}</span><span>{o.status}</span></li>)}</ul></div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card p-5"><h2 className="text-xl font-semibold">Messages de contact</h2><ul className="mt-3 space-y-2 text-sm">{messages.map((m) => <li key={m.id} className="border-b pb-2">{m.name} — {m.subject}</li>)}</ul></div>
-        <div className="card p-5"><h2 className="text-xl font-semibold">Demandes vendeurs</h2><ul className="mt-3 space-y-2 text-sm">{applications.map((a) => <li key={a.id} className="border-b pb-2">{a.businessName} — {a.city}</li>)}</ul></div>
+      <p className="text-slate-600">Connecte en admin: {sessionUser.name} ({sessionUser.email})</p>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="card p-5">
+          <h2 className="text-xl font-semibold">Comptes clients</h2>
+          <ul className="mt-3 space-y-3 text-sm">
+            {clientAccounts.map((account) => (
+              <li key={account.id} className="rounded-lg border p-3">
+                <p className="font-semibold">{account.name}</p>
+                <p>{account.email}</p>
+                <p>Localisation: {account.city}, {account.country}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="card p-5">
+          <h2 className="text-xl font-semibold">Comptes vendeurs</h2>
+          <ul className="mt-3 space-y-3 text-sm">
+            {sellerAccounts.map((account) => (
+              <li key={account.id} className="rounded-lg border p-3">
+                <p className="font-semibold">{account.name}</p>
+                <p>{account.email}</p>
+                <p>Localisation: {account.city}, {account.country}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="card p-5">
+        <h2 className="text-xl font-semibold">Fiches vendeurs verifiees</h2>
+        <ul className="mt-3 grid gap-3 md:grid-cols-3">
+          {sellerProfiles.map((seller) => (
+            <li key={seller.id} className="rounded-lg border p-3 text-sm">
+              <p className="font-semibold">{seller.company}</p>
+              <p>{seller.name}</p>
+              <p>{seller.email}</p>
+              <p>{seller.city}, {seller.country}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
