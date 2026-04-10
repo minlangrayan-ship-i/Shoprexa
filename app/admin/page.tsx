@@ -5,7 +5,7 @@ import { useSite } from '@/components/site-context';
 import { formatPrice } from '@/lib/utils';
 
 export default function AdminPage() {
-  const { sessionUser, users, sellers, products, orders, adminChangeUserRole, adminDeleteUser, t } = useSite();
+  const { sessionUser, users, sellers, products, orders, adminChangeUserRole, adminDeleteUser, adminAddProduct, adminUpdateProduct, adminDeleteProduct, t } = useSite();
   const [status, setStatus] = useState('');
 
   if (!sessionUser || sessionUser.role !== 'admin') {
@@ -24,6 +24,27 @@ export default function AdminPage() {
     const formData = new FormData(event.currentTarget);
     const result = adminChangeUserRole(String(formData.get('userId')), String(formData.get('role')) as 'client' | 'seller' | 'admin');
     setStatus(result.message);
+  };
+
+  const onAddProduct = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const images = String(formData.get('images') ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    const result = adminAddProduct({
+      sellerId: String(formData.get('sellerId')),
+      name: String(formData.get('name')),
+      description: String(formData.get('description')),
+      price: Number(formData.get('price')),
+      stock: Number(formData.get('stock')),
+      categorySlug: String(formData.get('categorySlug')),
+      images
+    });
+    setStatus(result.message);
+    if (result.ok) event.currentTarget.reset();
   };
 
   const clientAccounts = users.filter((user) => user.role === 'client');
@@ -101,6 +122,63 @@ export default function AdminPage() {
         </div>
 
         {status ? <p className="mt-3 text-sm">{status}</p> : null}
+      </div>
+
+      <div className="rounded-xl border bg-white p-5">
+        <h2 className="text-xl font-semibold">Gestion globale des produits (Admin)</h2>
+        <form onSubmit={onAddProduct} className="mt-3 grid gap-3 md:grid-cols-3">
+          <select name="sellerId" className="rounded-lg border px-3 py-2">
+            {sellers.map((seller) => (
+              <option key={seller.id} value={seller.id}>{seller.company}</option>
+            ))}
+          </select>
+          <input required name="name" placeholder="Nom produit" className="rounded-lg border px-3 py-2" />
+          <input required name="price" type="number" min="1" placeholder="Prix" className="rounded-lg border px-3 py-2" />
+          <input required name="stock" type="number" min="0" placeholder="Stock" className="rounded-lg border px-3 py-2" />
+          <select name="categorySlug" className="rounded-lg border px-3 py-2">
+            <option value="energie">energie</option>
+            <option value="cuisine">cuisine</option>
+            <option value="securite">securite</option>
+            <option value="mobilite">mobilite</option>
+            <option value="fitness">fitness</option>
+            <option value="organisation">organisation</option>
+          </select>
+          <input name="images" placeholder="URLs images (virgule)" className="rounded-lg border px-3 py-2" />
+          <textarea required name="description" placeholder="Description produit" className="h-20 rounded-lg border px-3 py-2 md:col-span-3" />
+          <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-3">Ajouter produit (admin)</button>
+        </form>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[850px] text-sm">
+            <thead>
+              <tr className="border-b text-left text-slate-500">
+                <th className="py-2">Produit</th>
+                <th className="py-2">Vendeur</th>
+                <th className="py-2">Prix</th>
+                <th className="py-2">Stock</th>
+                <th className="py-2">Actions admin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.slice(0, 30).map((product) => (
+                <tr key={product.id} className="border-b">
+                  <td className="py-2">{product.name}</td>
+                  <td className="py-2">{product.companyName}</td>
+                  <td className="py-2">{formatPrice(product.price)}</td>
+                  <td className="py-2">{product.stock}</td>
+                  <td className="py-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setStatus(adminUpdateProduct(product.id, { stock: product.stock + 1 }).message)} className="rounded border px-2 py-1 text-xs">+ stock</button>
+                      <button onClick={() => setStatus(adminUpdateProduct(product.id, { stock: Math.max(0, product.stock - 1) }).message)} className="rounded border px-2 py-1 text-xs">- stock</button>
+                      <button onClick={() => setStatus(adminUpdateProduct(product.id, { price: product.price + 500 }).message)} className="rounded border px-2 py-1 text-xs">+ prix</button>
+                      <button onClick={() => setStatus(adminDeleteProduct(product.id).message)} className="rounded border px-2 py-1 text-xs text-red-600">Supprimer</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );

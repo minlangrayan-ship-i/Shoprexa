@@ -72,6 +72,20 @@ type SiteContextValue = {
   updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>) => void;
   deleteSellerProduct: (productId: string) => void;
   updateSellerStock: (productId: string, stock: number) => void;
+  adminAddProduct: (payload: {
+    sellerId: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    categorySlug: string;
+    images: string[];
+  }) => { ok: boolean; message: string };
+  adminUpdateProduct: (
+    productId: string,
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
+  ) => { ok: boolean; message: string };
+  adminDeleteProduct: (productId: string) => { ok: boolean; message: string };
   adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
   adminDeleteUser: (userId: string) => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
@@ -357,6 +371,81 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     updateSellerProduct(productId, { stock });
   };
 
+  const categoryLabels: Record<string, string> = {
+    energie: 'Energie',
+    cuisine: 'Cuisine',
+    securite: 'Securite',
+    mobilite: 'Mobilite',
+    fitness: 'Fitness',
+    organisation: 'Organisation'
+  };
+
+  const adminAddProduct = (payload: {
+    sellerId: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    categorySlug: string;
+    images: string[];
+  }) => {
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    const seller = sellers.find((entry) => entry.id === payload.sellerId);
+    if (!seller) return { ok: false, message: t('Vendeur introuvable.', 'Seller not found.') };
+
+    const product: MarketplaceProduct = {
+      id: `prod-${Date.now()}`,
+      slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-4)}`,
+      name: payload.name,
+      description: payload.description,
+      price: payload.price,
+      oldPrice: null,
+      stock: payload.stock,
+      images: payload.images.length ? payload.images : ['https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'],
+      category: categoryLabels[payload.categorySlug] ?? 'Divers',
+      categorySlug: payload.categorySlug,
+      problemTag: 'Catalogue admin',
+      sellerId: seller.id,
+      companyName: seller.company,
+      sellerCountry: seller.country,
+      sellerCity: seller.city,
+      badges: ['new'],
+      averageRating: 4.0,
+      viewCount: 0
+    };
+    setProducts((current) => [product, ...current]);
+    return { ok: true, message: t('Produit ajoute par admin.', 'Product added by admin.') };
+  };
+
+  const adminUpdateProduct = (
+    productId: string,
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
+  ) => {
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === productId
+          ? {
+              ...product,
+              ...payload,
+              category: payload.categorySlug ? categoryLabels[payload.categorySlug] ?? product.category : product.category,
+              badges:
+                (payload.stock ?? product.stock) <= 10
+                  ? Array.from(new Set([...product.badges, 'low_stock']))
+                  : product.badges.filter((badge) => badge !== 'low_stock')
+            }
+          : product
+      )
+    );
+    return { ok: true, message: t('Produit mis a jour.', 'Product updated.') };
+  };
+
+  const adminDeleteProduct = (productId: string) => {
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    setProducts((current) => current.filter((product) => product.id !== productId));
+    return { ok: true, message: t('Produit supprime.', 'Product deleted.') };
+  };
+
   const adminChangeUserRole = (userId: string, role: AccountRole) => {
     if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
     if (sessionUser.id === userId && role !== 'admin') return { ok: false, message: t('Tu ne peux pas retirer ton role admin.', 'You cannot remove your own admin role.') };
@@ -442,6 +531,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         updateSellerProduct,
         deleteSellerProduct,
         updateSellerStock,
+        adminAddProduct,
+        adminUpdateProduct,
+        adminDeleteProduct,
         adminChangeUserRole,
         adminDeleteUser,
         t
