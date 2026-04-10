@@ -75,6 +75,7 @@ export default function SellersPage() {
 
               <p className="mt-2 text-sm text-slate-600">{seller.name}</p>
               <p className="text-xs text-slate-500">{seller.city}, {seller.country}</p>
+              <p className="text-xs font-semibold text-slate-500">Type: {seller.sellerType}</p>
               <p className="mt-1 text-xs text-slate-500">{seller.about}</p>
 
               <div className="mt-3">

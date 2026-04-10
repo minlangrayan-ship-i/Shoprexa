@@ -14,6 +14,7 @@ export default function SellerProfilePage() {
         <h1 className="text-3xl font-bold">Profil vendeur</h1>
 
         <div className="rounded-xl border bg-white p-5 text-sm">
+          <p><span className="font-semibold">Type:</span> {seller?.sellerType ?? '-'}</p>
           <p><span className="font-semibold">Boutique:</span> {seller?.company ?? '-'}</p>
           <p><span className="font-semibold">Nom:</span> {seller?.name ?? '-'}</p>
           <p><span className="font-semibold">Email:</span> {seller?.email ?? '-'}</p>

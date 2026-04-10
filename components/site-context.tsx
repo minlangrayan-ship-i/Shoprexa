@@ -7,20 +7,23 @@ import {
   demoUsers,
   findUserByCredentials,
   marketplaceProducts,
+  seededRecruitmentOffers,
   seededReviews,
   seededSellerOrders,
   sellerProfiles,
   type AccountRole,
   type DemoUser,
   type MarketplaceProduct,
+  type RecruitmentOffer,
   type MarketplaceSeller,
+  type SellerType,
   type SellerOrder,
   type SellerReview
 } from '@/lib/mock-marketplace';
 
 type Locale = 'fr' | 'en';
 
-type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId'>;
+type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId' | 'sellerType'>;
 
 type RegisterPayload = {
   name: string;
@@ -28,6 +31,7 @@ type RegisterPayload = {
   phone: string;
   password: string;
   role: 'client' | 'seller';
+  sellerType?: SellerType;
   country: string;
   city: string;
 };
@@ -56,6 +60,7 @@ type SiteContextValue = {
   products: MarketplaceProduct[];
   orders: SellerOrder[];
   reviews: SellerReview[];
+  recruitmentOffers: RecruitmentOffer[];
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
   logout: () => void;
@@ -86,6 +91,8 @@ type SiteContextValue = {
     payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
   ) => { ok: boolean; message: string };
   adminDeleteProduct: (productId: string) => { ok: boolean; message: string };
+  companySendRecruitmentOffer: (targetSellerId: string, productIds: string[]) => { ok: boolean; message: string };
+  respondRecruitmentOffer: (offerId: string, decision: 'accepted' | 'rejected') => { ok: boolean; message: string };
   adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
   adminDeleteUser: (userId: string) => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
@@ -105,6 +112,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
   const [orders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
+  const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -120,6 +128,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         sellers?: MarketplaceSeller[];
         products?: MarketplaceProduct[];
         reviews?: SellerReview[];
+        recruitmentOffers?: RecruitmentOffer[];
       };
 
       if (parsed.locale === 'fr' || parsed.locale === 'en') setLocale(parsed.locale);
@@ -130,14 +139,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.sellers?.length) setSellers(parsed.sellers);
       if (parsed.products?.length) setProducts(parsed.products);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
+      if (parsed.recruitmentOffers?.length) setRecruitmentOffers(parsed.recruitmentOffers);
     } catch {
       // Ignore localStorage parsing errors.
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews }));
-  }, [locale, country, city, sessionUser, users, sellers, products, reviews]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers }));
+  }, [locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers]);
 
   const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
@@ -162,7 +172,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     city: user.city,
     phone: user.phone,
     avatar: user.avatar ?? defaultAvatar,
-    sellerId: user.sellerId
+    sellerId: user.sellerId,
+    sellerType: user.sellerType
   });
 
   const login = (email: string, password: string) => {
@@ -188,6 +199,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
     const userId = `user-${Date.now()}`;
     const sellerId = payload.role === 'seller' ? `seller-${Date.now()}` : undefined;
+    const sellerType = payload.role === 'seller' ? payload.sellerType ?? 'min_shop' : undefined;
 
     const nextUser: DemoUser = {
       id: userId,
@@ -199,7 +211,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       city: payload.city,
       phone: payload.phone,
       avatar: defaultAvatar,
-      sellerId
+      sellerId,
+      sellerType
     };
 
     setUsers((current) => [nextUser, ...current]);
@@ -210,13 +223,19 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           id: sellerId,
           slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
           name: payload.name,
-          company: `${payload.name.split(' ')[0]} Store`,
+          company:
+            sellerType === 'company'
+              ? `${payload.name.split(' ')[0]} Entreprise`
+              : sellerType === 'dropshipper'
+                ? `${payload.name.split(' ')[0]} Dropship`
+                : `${payload.name.split(' ')[0]} Store`,
           email: payload.email,
           password: payload.password,
           phone: payload.phone,
           country: payload.country,
           city: payload.city,
-          verified: false,
+          verified: sellerType === 'company',
+          sellerType,
           about: 'Nouveau vendeur Min-shop.'
         },
         ...current
@@ -400,7 +419,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       description: payload.description,
       price: payload.price,
       oldPrice: null,
-      stock: payload.stock,
+      stock: seller.sellerType === 'dropshipper' ? 0 : payload.stock,
       images: payload.images.length ? payload.images : ['https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'],
       category: categoryLabels[payload.categorySlug] ?? 'Divers',
       categorySlug: payload.categorySlug,
@@ -415,6 +434,39 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     };
     setProducts((current) => [product, ...current]);
     return { ok: true, message: t('Produit ajoute par admin.', 'Product added by admin.') };
+  };
+
+  const companySendRecruitmentOffer = (targetSellerId: string, productIds: string[]) => {
+    if (!sessionUser?.sellerId || sessionUser.role !== 'seller' || sessionUser.sellerType !== 'company') {
+      return { ok: false, message: t('Action reservee aux entreprises.', 'Company-only action.') };
+    }
+    if (!targetSellerId || productIds.length === 0) {
+      return { ok: false, message: t('Selection incomplete.', 'Selection incomplete.') };
+    }
+    setRecruitmentOffers((current) => [
+      {
+        id: `offer-${Date.now()}`,
+        companySellerId: sessionUser.sellerId!,
+        targetSellerId,
+        productIds,
+        status: 'pending',
+        createdAt: new Date().toISOString().slice(0, 10)
+      },
+      ...current
+    ]);
+    return { ok: true, message: t('Offre envoyee.', 'Offer sent.') };
+  };
+
+  const respondRecruitmentOffer = (offerId: string, decision: 'accepted' | 'rejected') => {
+    if (!sessionUser?.sellerId || sessionUser.role !== 'seller') {
+      return { ok: false, message: t('Session vendeur requise.', 'Seller session required.') };
+    }
+    setRecruitmentOffers((current) =>
+      current.map((offer) =>
+        offer.id === offerId && offer.targetSellerId === sessionUser.sellerId ? { ...offer, status: decision } : offer
+      )
+    );
+    return { ok: true, message: decision === 'accepted' ? t('Offre acceptee.', 'Offer accepted.') : t('Offre refusee.', 'Offer rejected.') };
   };
 
   const adminUpdateProduct = (
@@ -478,6 +530,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           country: targetUser.country,
           city: targetUser.city,
           verified: false,
+          sellerType: 'min_shop',
           about: 'Nouveau vendeur Min-shop.'
         },
         ...current
@@ -522,6 +575,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         products,
         orders,
         reviews,
+        recruitmentOffers,
         login,
         register,
         logout,
@@ -534,6 +588,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         adminAddProduct,
         adminUpdateProduct,
         adminDeleteProduct,
+        companySendRecruitmentOffer,
+        respondRecruitmentOffer,
         adminChangeUserRole,
         adminDeleteUser,
         t

@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register, t } = useSite();
   const [country, setCountry] = useState(africaCountries[0].country);
+  const [role, setRole] = useState<'client' | 'seller'>('client');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,6 +26,7 @@ export default function RegisterPage() {
       phone: String(formData.get('phone')),
       password: String(formData.get('password')),
       role: String(formData.get('role')) as 'client' | 'seller',
+      sellerType: String(formData.get('sellerType') ?? 'min_shop') as 'min_shop' | 'dropshipper' | 'company',
       country: String(formData.get('country')),
       city: String(formData.get('city'))
     };
@@ -53,10 +55,20 @@ export default function RegisterPage() {
           <input required name="phone" placeholder={t('WhatsApp / Telephone', 'WhatsApp / Phone')} className="rounded-xl border px-3 py-2" />
           <input required minLength={8} type="password" name="password" placeholder={t('Mot de passe (8+)', 'Password (8+)')} className="rounded-xl border px-3 py-2" />
 
-          <select required name="role" className="rounded-xl border px-3 py-2">
+          <select required name="role" value={role} onChange={(event) => setRole(event.target.value as 'client' | 'seller')} className="rounded-xl border px-3 py-2">
             <option value="client">{t('Client', 'Client')}</option>
             <option value="seller">{t('Vendeur', 'Seller')}</option>
           </select>
+
+          {role === 'seller' ? (
+            <select name="sellerType" className="rounded-xl border px-3 py-2">
+              <option value="min_shop">Vendeur Min-shop</option>
+              <option value="dropshipper">Dropshipper</option>
+              <option value="company">Entreprise (produits/services)</option>
+            </select>
+          ) : (
+            <input value="client standard" disabled className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-500" />
+          )}
 
           <select
             required

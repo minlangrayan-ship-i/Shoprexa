@@ -1,4 +1,5 @@
 export type AccountRole = 'client' | 'seller' | 'admin';
+export type SellerType = 'min_shop' | 'dropshipper' | 'company';
 
 export type CountryOption = {
   country: string;
@@ -16,6 +17,7 @@ export type MarketplaceSeller = {
   country: string;
   city: string;
   verified: boolean;
+  sellerType: SellerType;
   about: string;
   logoUrl?: string;
 };
@@ -81,6 +83,16 @@ export type DemoUser = {
   phone: string;
   avatar?: string;
   sellerId?: string;
+  sellerType?: SellerType;
+};
+
+export type RecruitmentOffer = {
+  id: string;
+  companySellerId: string;
+  targetSellerId: string;
+  productIds: string[];
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
 };
 
 export const defaultAvatar =
@@ -117,6 +129,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Cameroun',
     city: 'Yaounde',
     verified: true,
+    sellerType: 'min_shop',
     about: 'Solutions energie et cuisine pour foyers, etudiants et petits commerces.'
   },
   {
@@ -130,6 +143,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Cote d\'Ivoire',
     city: 'Abidjan',
     verified: true,
+    sellerType: 'company',
     about: 'Equipements securite et organisation pour familles et commerces urbains.'
   },
   {
@@ -143,6 +157,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Nigeria',
     city: 'Lagos',
     verified: true,
+    sellerType: 'dropshipper',
     about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.'
   }
 ];
@@ -591,6 +606,17 @@ export const seededSellerViews: Record<string, number[]> = {
   'seller-3': [150, 170, 210, 250, 300, 340, 390]
 };
 
+export const seededRecruitmentOffers: RecruitmentOffer[] = [
+  {
+    id: 'offer-1',
+    companySellerId: 'seller-2',
+    targetSellerId: 'seller-3',
+    productIds: ['prod-5', 'prod-6', 'prod-18'],
+    status: 'pending',
+    createdAt: '2026-04-09'
+  }
+];
+
 export const demoUsers: DemoUser[] = [
   {
     id: 'admin-1',
@@ -601,7 +627,8 @@ export const demoUsers: DemoUser[] = [
     country: 'Cameroun',
     city: 'Yaounde',
     phone: '+237 692714985',
-    avatar: defaultAvatar
+    avatar: defaultAvatar,
+    sellerType: undefined
   },
   {
     id: 'client-1',
@@ -612,7 +639,8 @@ export const demoUsers: DemoUser[] = [
     country: 'Cameroun',
     city: 'Yaounde',
     phone: '+237 671111222',
-    avatar: defaultAvatar
+    avatar: defaultAvatar,
+    sellerType: undefined
   },
   {
     id: 'client-2',
@@ -623,7 +651,8 @@ export const demoUsers: DemoUser[] = [
     country: 'Senegal',
     city: 'Dakar',
     phone: '+221 770001122',
-    avatar: defaultAvatar
+    avatar: defaultAvatar,
+    sellerType: undefined
   },
   ...sellerProfiles.map((seller) => ({
     id: `user-${seller.id}`,
@@ -635,7 +664,8 @@ export const demoUsers: DemoUser[] = [
     city: seller.city,
     phone: seller.phone,
     avatar: defaultAvatar,
-    sellerId: seller.id
+    sellerId: seller.id,
+    sellerType: seller.sellerType
   }))
 ];
 
