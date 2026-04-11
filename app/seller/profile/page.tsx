@@ -22,8 +22,8 @@ export default function SellerProfilePage() {
           <p><span className="font-semibold">Email:</span> {seller?.email ?? '-'}</p>
           <p><span className="font-semibold">Telephone:</span> {seller?.phone ?? '-'}</p>
           <p><span className="font-semibold">Ville/Pays:</span> {seller?.city}, {seller?.country}</p>
-          <p><span className="font-semibold">Badge:</span> {trust?.hasBadge ? 'Verifie Min-shop' : 'Sans badge'}</p>
-          <p><span className="font-semibold">Clients satisfaits:</span> {trust?.satisfiedClients ?? 0}</p>
+          <p><span className="font-semibold">Badge:</span> {trust?.hasBadge ? (trust.badgeSource === 'admin' ? 'Verifie Min-shop (provisoire)' : 'Verifie Min-shop') : 'Sans badge'}</p>
+          <p><span className="font-semibold">Clients satisfaits:</span> {(trust?.satisfiedClients ?? 0) > 0 ? trust?.satisfiedClients : 'Donnees en cours'}</p>
           <p><span className="font-semibold">Satisfaction:</span> {trust?.satisfactionRate ?? 0}%</p>
           <p className="mt-2 text-slate-600">{seller?.about}</p>
 

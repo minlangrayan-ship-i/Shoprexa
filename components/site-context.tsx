@@ -117,7 +117,23 @@ type SiteContextValue = {
   t: (fr: string, en: string) => string;
 };
 
-const STORAGE_KEY = 'min-shop-site-context-v4';
+const STORAGE_KEY = 'min-shop-site-context-v5';
+const PRIMARY_ADMIN_ID = 'admin-1';
+
+function normalizeSingleAdmin(users: DemoUser[]) {
+  return users.map((user) => {
+    if (user.id === PRIMARY_ADMIN_ID) return { ...user, role: 'admin' as const };
+    if (user.role === 'admin') return { ...user, role: user.sellerId ? 'seller' as const : 'client' as const };
+    return user;
+  });
+}
+
+function normalizeSellersSnapshot(sellers: MarketplaceSeller[]) {
+  const map = new Map<string, MarketplaceSeller>();
+  for (const seller of sellerProfiles) map.set(seller.id, seller);
+  for (const seller of sellers) map.set(seller.id, seller);
+  return Array.from(map.values());
+}
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 
@@ -126,8 +142,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [country, setCountryState] = useState<string>(africaCountries[0].country);
   const [city, setCityState] = useState<string>(africaCountries[0].cities[0]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [users, setUsers] = useState<DemoUser[]>(demoUsers);
-  const [sellers, setSellers] = useState<MarketplaceSeller[]>(sellerProfiles);
+  const [users, setUsers] = useState<DemoUser[]>(normalizeSingleAdmin(demoUsers));
+  const [sellers, setSellers] = useState<MarketplaceSeller[]>(normalizeSellersSnapshot(sellerProfiles));
   const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
   const [orders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
@@ -165,8 +181,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.country) setCountryState(parsed.country);
       if (parsed.city) setCityState(parsed.city);
       if (parsed.sessionUser) setSessionUser(parsed.sessionUser);
-      if (parsed.users?.length) setUsers(parsed.users);
-      if (parsed.sellers?.length) setSellers(parsed.sellers);
+      if (parsed.users?.length) setUsers(normalizeSingleAdmin(parsed.users));
+      if (parsed.sellers?.length) setSellers(normalizeSellersSnapshot(parsed.sellers));
       if (parsed.products?.length) setProducts(parsed.products);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
       if (parsed.recruitmentOffers?.length) setRecruitmentOffers(parsed.recruitmentOffers);
@@ -565,6 +581,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const adminChangeUserRole = (userId: string, role: AccountRole) => {
     if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
     if (sessionUser.id === userId && role !== 'admin') return { ok: false, message: t('Tu ne peux pas retirer ton role admin.', 'You cannot remove your own admin role.') };
+    if (role === 'admin' && userId !== PRIMARY_ADMIN_ID) {
+      return { ok: false, message: t('Un seul admin est autorise: le compte principal.', 'Only one admin is allowed: the primary account.') };
+    }
 
     const targetUser = users.find((entry) => entry.id === userId);
     if (!targetUser) return { ok: false, message: t('Utilisateur introuvable.', 'User not found.') };
@@ -574,7 +593,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         user.id === userId
           ? {
               ...user,
-              role,
+              role: user.id === PRIMARY_ADMIN_ID ? 'admin' : role,
               sellerId: role === 'seller' ? user.sellerId ?? `seller-${user.id}` : undefined
             }
           : user

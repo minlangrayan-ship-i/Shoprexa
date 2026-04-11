@@ -257,7 +257,7 @@ function createVerifiedCitySellers(existing: MarketplaceSeller[]) {
 
 export const sellerProfiles: MarketplaceSeller[] = [...coreSellerProfiles, ...createVerifiedCitySellers(coreSellerProfiles)];
 
-export const dropshippers: Dropshipper[] = [
+const coreDropshippers: Dropshipper[] = [
   {
     id: 'drop-1',
     name: 'Atlas Dropship Afrique',
@@ -275,6 +275,40 @@ export const dropshippers: Dropshipper[] = [
     productIds: ['prod-5', 'prod-8', 'prod-12', 'prod-17', 'prod-18']
   }
 ];
+
+function createZoneDropshippers(existing: Dropshipper[]) {
+  const generated: Dropshipper[] = [];
+  const partnerLabels = ['TransitLink', 'MarketBridge', 'RelayHub', 'FulfillPro', 'SwiftSource', 'DistribConnect'];
+  const productPools = [
+    ['prod-1', 'prod-2', 'prod-13', 'prod-19', 'prod-22'],
+    ['prod-5', 'prod-6', 'prod-8', 'prod-18', 'prod-21']
+  ];
+  let sequence = 0;
+
+  for (const countryEntry of africaCountries) {
+    for (let index = 0; index < 2; index += 1) {
+      sequence += 1;
+      const city = countryEntry.cities[index % countryEntry.cities.length];
+      const label = partnerLabels[(sequence - 1) % partnerLabels.length];
+      const countrySlug = slugify(countryEntry.country);
+      const citySlug = slugify(city);
+      const suffix = index + 1;
+
+      generated.push({
+        id: `drop-zone-${countrySlug}-${suffix}`,
+        name: `${city} ${label}`,
+        email: `partner.${citySlug}.${suffix}@dropship.min-shop.africa`,
+        country: countryEntry.country,
+        city,
+        productIds: productPools[index % productPools.length]
+      });
+    }
+  }
+
+  return [...existing, ...generated];
+}
+
+export const dropshippers: Dropshipper[] = createZoneDropshippers(coreDropshippers);
 
 const imageSets = {
   solar: [
@@ -978,16 +1012,19 @@ export function getSellerTrustStats(
   const satisfactionRate = totalOrders === 0 ? 0 : Math.round((satisfiedClients / totalOrders) * 100);
   const complaintCount = complaints.filter((entry) => entry.sellerId === seller.id).length;
   const validCatalog = sellerProducts.every((product) => product.images.length > 0 && product.description.trim().length >= 16);
-  const hasBadge =
-    Boolean(seller.badgeGrantedByAdmin) ||
+  const hasPerformanceBadge =
     seller.identityVerified &&
     validCatalog &&
     successfulOrders >= 10 &&
     satisfactionRate >= 80 &&
     complaintCount < 3;
+  const hasAdminBadge = Boolean(seller.badgeGrantedByAdmin);
+  const hasBadge = hasAdminBadge || hasPerformanceBadge;
+  const badgeSource: 'admin' | 'performance' | 'none' = hasAdminBadge ? 'admin' : hasPerformanceBadge ? 'performance' : 'none';
 
   return {
     hasBadge,
+    badgeSource,
     successfulOrders,
     satisfiedClients,
     satisfactionRate,

@@ -175,6 +175,7 @@ export default function AdminPage() {
               <tr className="border-b text-left text-slate-500">
                 <th className="py-2">Vendeur</th>
                 <th className="py-2">Badge</th>
+                <th className="py-2">Source badge</th>
                 <th className="py-2">Commandes reussies</th>
                 <th className="py-2">Satisfaction</th>
                 <th className="py-2">Clients satisfaits</th>
@@ -185,7 +186,8 @@ export default function AdminPage() {
               {sellerTrustRows.map(({ seller, trust }) => (
                 <tr key={seller.id} className="border-b">
                   <td className="py-2">{seller.company}</td>
-                  <td className="py-2">{trust.hasBadge ? 'Verifie Min-shop' : 'Sans badge'}</td>
+                  <td className="py-2">{trust.hasBadge ? (trust.badgeSource === 'admin' ? 'Verifie Min-shop (provisoire)' : 'Verifie Min-shop') : 'Sans badge'}</td>
+                  <td className="py-2">{trust.badgeSource === 'admin' ? 'Admin' : trust.badgeSource === 'performance' ? 'Performance' : '-'}</td>
                   <td className="py-2">{trust.successfulOrders}</td>
                   <td className="py-2">{trust.satisfactionRate}%</td>
                   <td className="py-2">{trust.satisfiedClients}</td>
@@ -238,7 +240,6 @@ export default function AdminPage() {
           <select name="role" className="rounded-lg border px-3 py-2">
             <option value="client">client</option>
             <option value="seller">seller</option>
-            <option value="admin">admin</option>
           </select>
           <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white">Mettre a jour le role</button>
         </form>

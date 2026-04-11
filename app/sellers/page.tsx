@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { getSellerDashboardData, getSellerProducts, getSellerTrustStats, rankSellersByRating } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
@@ -25,6 +25,14 @@ export default function SellersPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [niche, setNiche] = useState('');
   const [zone, setZone] = useState<'city' | 'country' | 'all'>('country');
+  const dashboardRef = useRef<HTMLElement | null>(null);
+
+  const resetFilters = () => {
+    setZone('country');
+    setSellerType('all');
+    setNiche('');
+    setVerifiedOnly(false);
+  };
 
   const rankedSellers = useMemo(() => {
     const base = zone === 'city'
@@ -52,6 +60,11 @@ export default function SellersPage() {
   const dashboard = selectedSeller
     ? getSellerDashboardData(selectedSeller.id, products, reviews, orders)
     : null;
+
+  useEffect(() => {
+    if (!selectedSellerId || !dashboardRef.current) return;
+    dashboardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedSellerId]);
 
   const onReviewSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,7 +124,12 @@ export default function SellersPage() {
             {t('Verifies uniquement', 'Verified only')}
           </label>
         </div>
+        <button onClick={resetFilters} className="rounded-lg border px-3 py-1 text-xs font-semibold">
+          {t('Reinitialiser filtres', 'Reset filters')}
+        </button>
       </div>
+
+      <p className="mt-3 text-xs text-slate-500">{rankedSellers.length} {t('vendeurs trouves', 'sellers found')}</p>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         {rankedSellers.map((seller) => {
@@ -124,7 +142,11 @@ export default function SellersPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">{seller.company}</h2>
                 <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                  {trust.hasBadge ? t('Verifie Min-shop', 'Min-shop Verified') : t('Sans badge', 'No badge')}
+                  {trust.hasBadge
+                    ? trust.badgeSource === 'admin'
+                      ? t('Verifie Min-shop (provisoire)', 'Min-shop Verified (provisional)')
+                      : t('Verifie Min-shop', 'Min-shop Verified')
+                    : t('Sans badge', 'No badge')}
                 </span>
               </div>
               {trust.hasBadge ? (
@@ -135,7 +157,11 @@ export default function SellersPage() {
               <p className="text-xs text-slate-500">{seller.city}, {seller.country}</p>
               <p className="text-xs font-semibold text-slate-500">Type: {seller.sellerType}</p>
               <p className="mt-1 text-xs text-slate-500">{seller.about}</p>
-              <p className="mt-1 text-xs text-slate-500">+{trust.satisfiedClients} {t('clients satisfaits', 'satisfied clients')}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {trust.satisfiedClients > 0
+                  ? `+${trust.satisfiedClients} ${t('clients satisfaits', 'satisfied clients')}`
+                  : t('Donnees de satisfaction en cours', 'Satisfaction data in progress')}
+              </p>
 
               <div className="mt-3">
                 <Stars value={seller.averageRating} />
@@ -162,8 +188,14 @@ export default function SellersPage() {
         })}
       </div>
 
+      {rankedSellers.length === 0 ? (
+        <div className="mt-6 rounded-xl border bg-white p-4 text-sm text-slate-600">
+          {t('Aucun vendeur pour ces filtres. Reinitialise les filtres.', 'No sellers for these filters. Reset filters.')}
+        </div>
+      ) : null}
+
       {dashboard && selectedSeller ? (
-        <section className="mt-10 rounded-2xl border bg-white p-6 shadow-sm">
+        <section ref={dashboardRef} className="mt-10 rounded-2xl border bg-white p-6 shadow-sm">
           <h3 className="text-2xl font-bold">{t('Apercu vendeur', 'Seller overview')} - {selectedSeller.company}</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Produits</p><p className="text-xl font-bold">{dashboard.products.length}</p></div>
