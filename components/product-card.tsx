@@ -38,10 +38,16 @@ const badgeLabel: Record<'new' | 'popular' | 'low_stock', string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
-  const { country } = useSite();
+  const { country, sessionUser, t } = useSite();
   const [preview, setPreview] = useState(false);
+  const [status, setStatus] = useState('');
 
   const addToCart = () => {
+    if (!sessionUser || sessionUser.role !== 'client') {
+      setStatus(t('Connecte-toi avec un compte client pour commander.', 'Please login with a client account to order.'));
+      return;
+    }
+
     const raw = localStorage.getItem('min-shop-cart');
     const cart: CartItem[] = raw ? JSON.parse(raw) : [];
     const found = cart.find((item) => item.id === product.id);
@@ -134,6 +140,7 @@ export function ProductCard({ product }: { product: Product }) {
           <button onClick={addToCart} className="w-full rounded-xl bg-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
             Ajouter au panier
           </button>
+          {status ? <p className="text-xs text-red-600">{status}</p> : null}
         </div>
       </article>
 

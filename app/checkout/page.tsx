@@ -6,9 +6,10 @@ import { estimateDelivery, formatPrice } from '@/lib/utils';
 import { paymentProviders } from '@/lib/payment';
 import { useSite } from '@/components/site-context';
 import { africaCountries } from '@/lib/mock-marketplace';
+import Link from 'next/link';
 
 export default function CheckoutPage() {
-  const { country, city, products, t } = useSite();
+  const { country, city, products, sessionUser, t } = useSite();
   const [items, setItems] = useState<CartItem[]>([]);
   const [clientCountry, setClientCountry] = useState(country);
   const [clientCity, setClientCity] = useState(city);
@@ -57,6 +58,10 @@ export default function CheckoutPage() {
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!sessionUser || sessionUser.role !== 'client') {
+      setStatus(t('Commande reservee aux comptes clients.', 'Ordering is reserved for client accounts.'));
+      return;
+    }
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
     const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, items }) });
     if (res.ok) {
@@ -73,6 +78,14 @@ export default function CheckoutPage() {
   return (
     <section className="section py-12">
       <h1 className="text-3xl font-bold">{t('Paiement', 'Checkout')}</h1>
+      {!sessionUser || sessionUser.role !== 'client' ? (
+        <div className="mt-4 rounded-xl border bg-amber-50 p-4 text-sm text-amber-700">
+          <p>{t('Acces checkout reserve aux clients connectes.', 'Checkout access is restricted to logged-in client accounts.')}</p>
+          <Link href="/auth/login" className="mt-2 inline-block rounded-lg border border-amber-400 px-3 py-1 font-semibold">
+            {t('Se connecter', 'Login')}
+          </Link>
+        </div>
+      ) : null}
       <div className="mt-6 grid gap-8 md:grid-cols-[1fr_320px]">
         <form onSubmit={onSubmit} className="card space-y-3 p-6">
           <input required name="customerName" placeholder={t('Nom complet', 'Full name')} className="w-full rounded-lg border px-3 py-2" />
@@ -101,7 +114,7 @@ export default function CheckoutPage() {
             <p>{t('Cout livraison', 'Delivery cost')}: <span className="font-semibold">{formatPrice(shipping.deliveryCost, clientCountry)}</span></p>
           </div>
 
-          <button className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white">{t('Valider la commande', 'Confirm order')}</button>
+          <button disabled={!sessionUser || sessionUser.role !== 'client'} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{t('Valider la commande', 'Confirm order')}</button>
           {status && <p className="text-sm">{status}</p>}
         </form>
 
