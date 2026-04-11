@@ -47,6 +47,7 @@ export default function ClientHomePage() {
     () => testimonials.filter((entry) => entry.country === country).slice(0, 3),
     [country, testimonials]
   );
+  const regionalReviewComments = useMemo(() => reviews.slice(0, 3), [reviews]);
 
   const topSeller = useMemo(() => rankSellersByRating(reviews, country, city, sellers)[0], [city, country, reviews, sellers]);
 
@@ -102,9 +103,22 @@ export default function ClientHomePage() {
       <div className="mt-10 rounded-xl border bg-white p-5">
         <h3 className="text-lg font-bold">{t('Temoignages clients de votre region', 'Testimonials from your region')}</h3>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
-          {regionalTestimonials.map((item) => (
+          {(regionalTestimonials.length > 0
+            ? regionalTestimonials.map((item) => ({
+                id: item.id,
+                title: `${item.name} - ${item.city}`,
+                rating: item.rating,
+                comment: item.comment
+              }))
+            : regionalReviewComments.map((item) => ({
+                id: item.id,
+                title: `${item.customerName} - ${country}`,
+                rating: item.rating,
+                comment: item.comment
+              }))
+          ).map((item) => (
             <article key={item.id} className="rounded-lg border p-3 text-sm">
-              <p className="font-semibold">{item.name} - {item.city}</p>
+              <p className="font-semibold">{item.title}</p>
               <p className="text-amber-600">{item.rating}/5</p>
               <p className="text-slate-600">{item.comment}</p>
             </article>

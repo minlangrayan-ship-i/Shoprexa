@@ -55,6 +55,11 @@ export default function SellersPage() {
 
   const onReviewSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!sessionUser || sessionUser.role !== 'client') {
+      setReviewStatus(t('Connecte-toi avec un compte client pour laisser un avis.', 'Please login with a client account to leave a review.'));
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
 
     const sellerId = String(formData.get('sellerId'));
@@ -67,8 +72,9 @@ export default function SellersPage() {
       return;
     }
 
-    addReview({ sellerId, customerName, rating, comment });
-    setReviewStatus(t('Avis enregistre. Merci !', 'Review submitted. Thank you!'));
+    const result = addReview({ sellerId, customerName, rating, comment });
+    setReviewStatus(result.message);
+    if (!result.ok) return;
     event.currentTarget.reset();
   };
 
@@ -118,9 +124,12 @@ export default function SellersPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">{seller.company}</h2>
                 <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                  {trust.hasBadge ? t('Verifie Shoprex', 'Shoprex Verified') : t('Sans badge', 'No badge')}
+                  {trust.hasBadge ? t('Verifie Min-shop', 'Min-shop Verified') : t('Sans badge', 'No badge')}
                 </span>
               </div>
+              {trust.hasBadge ? (
+                <p className="mt-2 text-xs font-semibold text-emerald-700">✔ {t('Badge Verifie Min-shop visible dans le classement', 'Min-shop Verified badge visible in ranking')}</p>
+              ) : null}
 
               <p className="mt-2 text-sm text-slate-600">{seller.name}</p>
               <p className="text-xs text-slate-500">{seller.city}, {seller.country}</p>
@@ -167,6 +176,11 @@ export default function SellersPage() {
 
       <section className="mt-10 rounded-2xl border bg-white p-6 shadow-sm">
         <h3 className="text-xl font-bold">{t('Noter un vendeur', 'Rate a vendor')}</h3>
+        {!sessionUser || sessionUser.role !== 'client' ? (
+          <p className="mt-2 text-sm text-slate-600">
+            {t('Seuls les clients inscrits et connectes peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.')}
+          </p>
+        ) : null}
         <form onSubmit={onReviewSubmit} className="mt-4 grid gap-3 md:grid-cols-2">
           <select name="sellerId" required className="rounded-lg border px-3 py-2">
             <option value="">{t('Choisir un vendeur', 'Choose a vendor')}</option>
@@ -184,7 +198,7 @@ export default function SellersPage() {
 
           <input name="comment" required placeholder={t('Votre commentaire', 'Your comment')} className="rounded-lg border px-3 py-2" />
 
-          <button className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white md:col-span-2">{t('Envoyer mon avis', 'Submit review')}</button>
+          <button disabled={!sessionUser || sessionUser.role !== 'client'} className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">{t('Envoyer mon avis', 'Submit review')}</button>
           {reviewStatus ? <p className="text-sm md:col-span-2">{reviewStatus}</p> : null}
         </form>
       </section>

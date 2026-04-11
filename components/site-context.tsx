@@ -75,7 +75,7 @@ type SiteContextValue = {
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
   logout: () => void;
   updateProfile: (payload: ProfileUpdatePayload) => { ok: boolean; message: string };
-  addReview: (review: Omit<SellerReview, 'id' | 'createdAt'>) => void;
+  addReview: (review: Omit<SellerReview, 'id' | 'createdAt'>) => { ok: boolean; message: string };
   addSellerProduct: (payload: {
     name: string;
     description: string;
@@ -113,6 +113,7 @@ type SiteContextValue = {
   respondRecruitmentOffer: (offerId: string, decision: 'accepted' | 'rejected') => { ok: boolean; message: string };
   adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
   adminDeleteUser: (userId: string) => { ok: boolean; message: string };
+  deleteCurrentAccount: () => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
 };
 
@@ -346,6 +347,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addReview = (review: Omit<SellerReview, 'id' | 'createdAt'>) => {
+    if (!sessionUser || sessionUser.role !== 'client') {
+      return { ok: false, message: t('Seuls les clients inscrits et connectes peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.') };
+    }
+
     setReviews((current) => [
       {
         ...review,
@@ -354,6 +359,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       },
       ...current
     ]);
+    return { ok: true, message: t('Avis enregistre. Merci !', 'Review submitted. Thank you!') };
   };
 
   const addSellerProduct = (payload: {
@@ -616,6 +622,27 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     return { ok: true, message: t('Compte supprime.', 'Account deleted.') };
   };
 
+  const deleteCurrentAccount = () => {
+    if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
+    if (sessionUser.role === 'admin') {
+      return { ok: false, message: t('Un compte admin ne peut pas etre supprime.', 'An admin account cannot be deleted.') };
+    }
+
+    const target = users.find((entry) => entry.id === sessionUser.id);
+    if (!target) return { ok: false, message: t('Compte introuvable.', 'Account not found.') };
+
+    setUsers((current) => current.filter((user) => user.id !== sessionUser.id));
+
+    if (target.sellerId) {
+      setSellers((current) => current.filter((seller) => seller.id !== target.sellerId));
+      setProducts((current) => current.filter((product) => product.sellerId !== target.sellerId));
+      setReviews((current) => current.filter((review) => review.sellerId !== target.sellerId));
+    }
+
+    setSessionUser(null);
+    return { ok: true, message: t('Ton compte a ete supprime.', 'Your account has been deleted.') };
+  };
+
   const t = (fr: string, en: string) => (locale === 'fr' ? fr : en);
 
   useEffect(() => {
@@ -669,6 +696,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         respondRecruitmentOffer,
         adminChangeUserRole,
         adminDeleteUser,
+        deleteCurrentAccount,
         t
       }}
     >

@@ -185,7 +185,7 @@ export default function AdminPage() {
               {sellerTrustRows.map(({ seller, trust }) => (
                 <tr key={seller.id} className="border-b">
                   <td className="py-2">{seller.company}</td>
-                  <td className="py-2">{trust.hasBadge ? 'Verifie Shoprex' : 'Sans badge'}</td>
+                  <td className="py-2">{trust.hasBadge ? 'Verifie Min-shop' : 'Sans badge'}</td>
                   <td className="py-2">{trust.successfulOrders}</td>
                   <td className="py-2">{trust.satisfactionRate}%</td>
                   <td className="py-2">{trust.satisfiedClients}</td>

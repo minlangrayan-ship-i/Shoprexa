@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSite } from '@/components/site-context';
 
 function fileToBase64(file: File) {
@@ -14,7 +15,8 @@ function fileToBase64(file: File) {
 }
 
 export default function ProfilePage() {
-  const { sessionUser, updateProfile, t, availableCities, setCountry } = useSite();
+  const router = useRouter();
+  const { sessionUser, updateProfile, deleteCurrentAccount, t, availableCities, setCountry } = useSite();
   const [status, setStatus] = useState('');
   const [avatar, setAvatar] = useState<string | undefined>(sessionUser?.avatar);
 
@@ -48,6 +50,14 @@ export default function ProfilePage() {
     });
 
     setStatus(result.message);
+  };
+
+  const onDeleteAccount = () => {
+    const confirmed = window.confirm(t('Confirmer la suppression definitive du compte ?', 'Confirm permanent account deletion?'));
+    if (!confirmed) return;
+    const result = deleteCurrentAccount();
+    setStatus(result.message);
+    if (result.ok) router.push('/');
   };
 
   return (
@@ -96,6 +106,15 @@ export default function ProfilePage() {
           ) : null}
 
           <button className="rounded-xl bg-dark px-4 py-2 font-semibold text-white md:col-span-2">{t('Enregistrer', 'Save profile')}</button>
+          {sessionUser.role !== 'admin' ? (
+            <button type="button" onClick={onDeleteAccount} className="rounded-xl border border-red-300 px-4 py-2 font-semibold text-red-600 md:col-span-2">
+              {t('Supprimer mon compte', 'Delete my account')}
+            </button>
+          ) : (
+            <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-700 md:col-span-2">
+              {t('Le compte admin ne peut pas etre supprime depuis le profil.', 'Admin account cannot be deleted from profile.')}
+            </p>
+          )}
           {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
         </form>
       </div>

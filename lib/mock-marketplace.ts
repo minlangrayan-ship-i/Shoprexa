@@ -21,6 +21,7 @@ export type MarketplaceSeller = {
   sellerType: SellerType;
   about: string;
   logoUrl?: string;
+  badgeGrantedByAdmin?: boolean;
 };
 
 export type Dropshipper = {
@@ -152,7 +153,7 @@ export const marketplaceCategories = [
   { label: 'Organisation', slug: 'organisation' }
 ];
 
-export const sellerProfiles: MarketplaceSeller[] = [
+const coreSellerProfiles: MarketplaceSeller[] = [
   {
     id: 'seller-1',
     slug: 'sahel-energy-tools',
@@ -199,6 +200,62 @@ export const sellerProfiles: MarketplaceSeller[] = [
     about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.'
   }
 ];
+
+const citySuffix = ['North', 'Central', 'Prime', 'Hub', 'Select', 'Connect'];
+const peopleNames = [
+  'Amina', 'Boris', 'Cedric', 'Diane', 'Emile', 'Fatou', 'Grace', 'Herve', 'Ines', 'Junior',
+  'Khadija', 'Lionel', 'Mariam', 'Nadine', 'Oumar', 'Prisca', 'Quentin', 'Ruth', 'Serge', 'Tania'
+];
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function createVerifiedCitySellers(existing: MarketplaceSeller[]) {
+  let sequence = 0;
+  const generated: MarketplaceSeller[] = [];
+
+  for (const countryEntry of africaCountries) {
+    for (const cityEntry of countryEntry.cities) {
+      const currentCount = existing.filter((seller) => seller.country === countryEntry.country && seller.city === cityEntry).length;
+      const needed = Math.max(0, 2 - currentCount);
+
+      for (let index = 0; index < needed; index += 1) {
+        sequence += 1;
+        const name = peopleNames[(sequence - 1) % peopleNames.length];
+        const suffix = citySuffix[(sequence - 1) % citySuffix.length];
+        const company = `${cityEntry} ${suffix} Market`;
+        const citySlug = slugify(cityEntry);
+        const countryCode = countryEntry.country.slice(0, 2).toLowerCase();
+        const sellerType: SellerType = sequence % 3 === 0 ? 'company' : sequence % 2 === 0 ? 'dropshipper' : 'min_shop';
+
+        generated.push({
+          id: `seller-auto-${citySlug}-${index + 1}`,
+          slug: `seller-${citySlug}-${index + 1}`,
+          name: `${name} ${cityEntry}`,
+          company,
+          email: `${slugify(name)}.${citySlug}.${index + 1}@min-shop.${countryCode}`,
+          password: `Seller${citySlug}${index + 1}123`,
+          phone: `${countryPhonePrefixes[countryEntry.country] ?? '+237'} 600000${(sequence + index).toString().padStart(3, '0')}`,
+          country: countryEntry.country,
+          city: cityEntry,
+          verified: true,
+          identityVerified: true,
+          badgeGrantedByAdmin: true,
+          sellerType,
+          about: `Vendeur verifie Min-shop pour ${cityEntry}, specialise en solutions locales et fiables.`
+        });
+      }
+    }
+  }
+
+  return generated;
+}
+
+export const sellerProfiles: MarketplaceSeller[] = [...coreSellerProfiles, ...createVerifiedCitySellers(coreSellerProfiles)];
 
 export const dropshippers: Dropshipper[] = [
   {
@@ -726,7 +783,11 @@ export const seededReviews: SellerReview[] = [
   { id: 'rev-3', sellerId: 'seller-2', customerName: 'Aicha', rating: 5, comment: 'Materiel securite fiable.', createdAt: '2026-03-12' },
   { id: 'rev-4', sellerId: 'seller-2', customerName: 'Yao', rating: 4, comment: 'Service client reactif.', createdAt: '2026-03-14' },
   { id: 'rev-5', sellerId: 'seller-3', customerName: 'Emeka', rating: 5, comment: 'Produits mobilite top pour Lagos.', createdAt: '2026-03-07' },
-  { id: 'rev-6', sellerId: 'seller-3', customerName: 'Sophie', rating: 4, comment: 'Montre fitness conforme.', createdAt: '2026-03-11' }
+  { id: 'rev-6', sellerId: 'seller-3', customerName: 'Sophie', rating: 4, comment: 'Montre fitness conforme.', createdAt: '2026-03-11' },
+  { id: 'rev-7', sellerId: 'seller-1', customerName: 'Aline Mvondo', rating: 5, comment: 'Tres satisfaite de la lampe solaire, exactement comme sur la photo.', createdAt: '2026-04-03' },
+  { id: 'rev-8', sellerId: 'seller-2', customerName: 'Cheikh Ndiaye', rating: 4, comment: 'Bon suivi et installation rapide du service securite.', createdAt: '2026-04-04' },
+  { id: 'rev-9', sellerId: 'seller-3', customerName: 'Merveille Ewane', rating: 5, comment: 'Le vendeur m a bien conseille avant achat.', createdAt: '2026-04-05' },
+  { id: 'rev-10', sellerId: 'seller-1', customerName: 'Samuel Okoro', rating: 4, comment: 'Experience fluide, delai de livraison respecte.', createdAt: '2026-04-06' }
 ];
 
 export const seededSellerOrders: SellerOrder[] = [
@@ -777,7 +838,9 @@ export const seededTestimonials: ClientTestimonial[] = [
   { id: 'tes-1', country: 'Cameroun', city: 'Yaounde', name: 'Client satisfait', rating: 5, comment: 'Livraison rapide et service WhatsApp tres rassurant.' },
   { id: 'tes-2', country: 'Cameroun', city: 'Douala', name: 'Acheteuse locale', rating: 4, comment: 'Produits utiles pour le quotidien, bons vendeurs verifies.' },
   { id: 'tes-3', country: 'Nigeria', city: 'Lagos', name: 'Startup founder', rating: 5, comment: 'Excellent suivi et delais bien annonces.' },
-  { id: 'tes-4', country: 'Senegal', city: 'Dakar', name: 'Client business', rating: 4, comment: 'Le choix des vendeurs par niche est tres pratique.' }
+  { id: 'tes-4', country: 'Senegal', city: 'Dakar', name: 'Client business', rating: 4, comment: 'Le choix des vendeurs par niche est tres pratique.' },
+  { id: 'tes-5', country: 'Cameroun', city: 'Yaounde', name: 'Aline Mvondo', rating: 5, comment: 'La plateforme inspire confiance et les prix sont clairs.' },
+  { id: 'tes-6', country: 'Senegal', city: 'Dakar', name: 'Cheikh Ndiaye', rating: 4, comment: 'Les recommandations personnalisees m ont aide a choisir vite.' }
 ];
 
 export const demoUsers: DemoUser[] = [
@@ -822,6 +885,34 @@ export const demoUsers: DemoUser[] = [
     sellerType: undefined,
     createdAt: '2026-02-17',
     preferences: ['mobilite', 'organisation']
+  },
+  {
+    id: 'client-3',
+    name: 'Merveille Ewane',
+    email: 'merveille.client@min-shop.com',
+    password: 'ClientMerveille123',
+    role: 'client',
+    country: 'Cameroun',
+    city: 'Douala',
+    phone: '+237 699334455',
+    avatar: defaultAvatar,
+    sellerType: undefined,
+    createdAt: '2026-03-02',
+    preferences: ['securite', 'energie']
+  },
+  {
+    id: 'client-4',
+    name: 'Samuel Okoro',
+    email: 'samuel.client@min-shop.com',
+    password: 'ClientSamuel123',
+    role: 'client',
+    country: 'Nigeria',
+    city: 'Lagos',
+    phone: '+234 8112233445',
+    avatar: defaultAvatar,
+    sellerType: undefined,
+    createdAt: '2026-03-09',
+    preferences: ['mobilite', 'fitness']
   },
   ...sellerProfiles.map((seller) => ({
     id: `user-${seller.id}`,
@@ -888,6 +979,7 @@ export function getSellerTrustStats(
   const complaintCount = complaints.filter((entry) => entry.sellerId === seller.id).length;
   const validCatalog = sellerProducts.every((product) => product.images.length > 0 && product.description.trim().length >= 16);
   const hasBadge =
+    Boolean(seller.badgeGrantedByAdmin) ||
     seller.identityVerified &&
     validCatalog &&
     successfulOrders >= 10 &&

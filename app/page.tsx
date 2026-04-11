@@ -8,7 +8,7 @@ import { rankSellersByRating } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function HomePage() {
-  const { country, city, products, reviews, sellers, t } = useSite();
+  const { country, city, products, reviews, testimonials, sellers, t } = useSite();
 
   const featuredProducts = useMemo(() => {
     return products
@@ -39,7 +39,12 @@ export default function HomePage() {
       }));
   }, [country, products]);
 
-  const topSellers = useMemo(() => rankSellersByRating(reviews, country, undefined, sellers).slice(0, 3), [country, reviews, sellers]);
+  const topSellers = useMemo(() => rankSellersByRating(reviews, country, undefined, sellers).slice(0, 6), [country, reviews, sellers]);
+  const regionalTestimonials = useMemo(
+    () => testimonials.filter((entry) => entry.country === country).slice(0, 3),
+    [country, testimonials]
+  );
+  const recentComments = useMemo(() => reviews.slice(0, 3), [reviews]);
 
   return (
     <>
@@ -47,7 +52,7 @@ export default function HomePage() {
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
             <p className="mb-4 inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">{t('Marketplace africaine premium', 'Premium African marketplace')}</p>
-            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prets a convertir.', 'The best everyday products, built for African realities.')}</h1>
+            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prets a simplifier votre vie.', 'The best everyday products, built for African realities.')}</h1>
             <p className="mt-5 text-slate-600">{t('Catalogue visuel optimise pour', 'Visual-first catalog optimized for')} {city}, {country}. {t('Images nettes, vendeurs verifies, parcours rapide.', 'Sharp images, verified sellers, frictionless checkout flow.')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white">{t('Voir le catalogue', 'Browse catalog')}</Link>
@@ -81,7 +86,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold">{t('Vendeurs mis en avant', 'Featured sellers')}</h2>
           <Link href="/sellers" className="text-sm font-semibold text-brand-700">{t('Voir plus', 'See more')}</Link>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {topSellers.map((seller) => (
             <Link key={seller.id} href={`/seller/${seller.slug}`} className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1">
               <p className="text-xs font-semibold text-emerald-700">{seller.verified ? t('Vendeur verifie', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
@@ -89,6 +94,35 @@ export default function HomePage() {
               <p className="text-sm text-slate-600">{seller.city}, {seller.country}</p>
               <p className="mt-2 text-sm">{t('Note', 'Rating')}: {seller.averageRating}/5</p>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="section py-10">
+        <h2 className="text-2xl font-bold">{t('Avis clients recents', 'Recent customer comments')}</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {(regionalTestimonials.length > 0
+            ? regionalTestimonials.map((entry) => ({
+                id: entry.id,
+                author: entry.name,
+                zone: `${entry.city}, ${entry.country}`,
+                rating: entry.rating,
+                comment: entry.comment
+              }))
+            : recentComments.map((entry) => ({
+                id: entry.id,
+                author: entry.customerName,
+                zone: country,
+                rating: entry.rating,
+                comment: entry.comment
+              }))
+          ).map((item) => (
+            <article key={item.id} className="rounded-xl border bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold">{item.author}</p>
+              <p className="text-xs text-slate-500">{item.zone}</p>
+              <p className="mt-1 text-xs text-amber-600">{item.rating}/5</p>
+              <p className="mt-2 text-sm text-slate-600">{item.comment}</p>
+            </article>
           ))}
         </div>
       </section>
