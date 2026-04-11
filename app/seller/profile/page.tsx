@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { SellerLayout } from '@/components/seller-layout';
 import { useSite } from '@/components/site-context';
+import { getSellerTrustStats } from '@/lib/mock-marketplace';
 
 export default function SellerProfilePage() {
-  const { sessionUser, sellers } = useSite();
+  const { sessionUser, sellers, products, orders, reviews, complaints } = useSite();
   const seller = sellers.find((entry) => entry.id === sessionUser?.sellerId);
+  const trust = seller ? getSellerTrustStats(seller, products, reviews, orders, complaints) : null;
 
   return (
     <SellerLayout>
@@ -20,6 +22,9 @@ export default function SellerProfilePage() {
           <p><span className="font-semibold">Email:</span> {seller?.email ?? '-'}</p>
           <p><span className="font-semibold">Telephone:</span> {seller?.phone ?? '-'}</p>
           <p><span className="font-semibold">Ville/Pays:</span> {seller?.city}, {seller?.country}</p>
+          <p><span className="font-semibold">Badge:</span> {trust?.hasBadge ? 'Verifie Shoprex' : 'Sans badge'}</p>
+          <p><span className="font-semibold">Clients satisfaits:</span> {trust?.satisfiedClients ?? 0}</p>
+          <p><span className="font-semibold">Satisfaction:</span> {trust?.satisfactionRate ?? 0}%</p>
           <p className="mt-2 text-slate-600">{seller?.about}</p>
 
           <Link href="/profile" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 font-semibold text-white">

@@ -13,7 +13,7 @@ const WHATSAPP_NUMBER = '237692714985';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
-  const { products } = useSite();
+  const { products, sellers, country } = useSite();
 
   const product = useMemo(() => products.find((entry) => entry.slug === params.slug), [params.slug, products]);
   const [activeImage, setActiveImage] = useState(0);
@@ -46,8 +46,13 @@ export default function ProductDetailPage() {
         city: entry.sellerCity
       },
       badges: entry.badges,
-      averageRating: entry.averageRating
+      averageRating: entry.averageRating,
+      kind: entry.kind,
+      serviceDuration: entry.serviceDuration,
+      serviceAvailability: entry.serviceAvailability
     }));
+
+  const seller = sellers.find((entry) => entry.id === product.sellerId);
 
   return (
     <section className="section py-10">
@@ -72,11 +77,14 @@ export default function ProductDetailPage() {
 
         <div>
           <p className="text-sm font-semibold text-brand-700">{product.category}</p>
+          <p className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${product.kind === 'service' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+            {product.kind === 'service' ? 'Service' : 'Produit'}
+          </p>
           <h1 className="mt-2 text-3xl font-bold">{product.name}</h1>
 
           <div className="mt-3 flex items-center gap-3">
-            <span className="text-2xl font-black text-brand-700">{formatPrice(product.price)}</span>
-            {product.oldPrice ? <span className="text-slate-400 line-through">{formatPrice(product.oldPrice)}</span> : null}
+            <span className="text-2xl font-black text-brand-700">{formatPrice(product.price, country)}</span>
+            {product.oldPrice ? <span className="text-slate-400 line-through">{formatPrice(product.oldPrice, country)}</span> : null}
           </div>
 
           <div className="mt-3 flex items-center gap-1 text-amber-600">
@@ -89,7 +97,7 @@ export default function ProductDetailPage() {
           <div className="mt-4 space-y-1 text-sm text-slate-700">
             <p>
               Vendeur:{' '}
-              <Link href={`/seller/${product.sellerId}`} className="font-semibold text-brand-700 hover:underline">
+              <Link href={`/seller/${seller?.slug ?? product.sellerId}`} className="font-semibold text-brand-700 hover:underline">
                 {product.companyName}
               </Link>
             </p>
@@ -97,6 +105,8 @@ export default function ProductDetailPage() {
             <p className={product.stock <= 10 ? 'font-semibold text-amber-600' : 'font-semibold text-emerald-700'}>
               Stock disponible: {product.stock}
             </p>
+            {product.kind === 'service' ? <p>Duree: {product.serviceDuration ?? 'Sur devis'}</p> : null}
+            {product.kind === 'service' ? <p>Disponibilite: {product.serviceAvailability ?? 'Sur rendez-vous'}</p> : null}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">

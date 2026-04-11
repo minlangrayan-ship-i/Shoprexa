@@ -3,19 +3,25 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   africaCountries,
+  countryPhonePrefixes,
   defaultAvatar,
   demoUsers,
   findUserByCredentials,
+  getSellerTrustStats,
   marketplaceProducts,
   seededRecruitmentOffers,
+  seededSellerComplaints,
+  seededTestimonials,
   seededReviews,
   seededSellerOrders,
   sellerProfiles,
   type AccountRole,
+  type ClientTestimonial,
   type DemoUser,
   type MarketplaceProduct,
   type RecruitmentOffer,
   type MarketplaceSeller,
+  type SellerComplaint,
   type SellerType,
   type SellerOrder,
   type SellerReview
@@ -23,7 +29,7 @@ import {
 
 type Locale = 'fr' | 'en';
 
-type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId' | 'sellerType'>;
+type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId' | 'sellerType' | 'createdAt' | 'preferences'>;
 
 type RegisterPayload = {
   name: string;
@@ -34,6 +40,7 @@ type RegisterPayload = {
   sellerType?: SellerType;
   country: string;
   city: string;
+  preferences?: string[];
 };
 
 type ProfileUpdatePayload = {
@@ -60,7 +67,10 @@ type SiteContextValue = {
   products: MarketplaceProduct[];
   orders: SellerOrder[];
   reviews: SellerReview[];
+  complaints: SellerComplaint[];
+  testimonials: ClientTestimonial[];
   recruitmentOffers: RecruitmentOffer[];
+  siteVisits: number;
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
   logout: () => void;
@@ -73,6 +83,10 @@ type SiteContextValue = {
     stock: number;
     categorySlug: string;
     images: string[];
+    kind?: 'product' | 'service';
+    serviceDuration?: string;
+    serviceAvailability?: string;
+    targetCountries?: string[];
   }) => { ok: boolean; message: string };
   updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>) => void;
   deleteSellerProduct: (productId: string) => void;
@@ -85,6 +99,10 @@ type SiteContextValue = {
     stock: number;
     categorySlug: string;
     images: string[];
+    kind?: 'product' | 'service';
+    serviceDuration?: string;
+    serviceAvailability?: string;
+    targetCountries?: string[];
   }) => { ok: boolean; message: string };
   adminUpdateProduct: (
     productId: string,
@@ -98,7 +116,7 @@ type SiteContextValue = {
   t: (fr: string, en: string) => string;
 };
 
-const STORAGE_KEY = 'min-shop-site-context-v3';
+const STORAGE_KEY = 'min-shop-site-context-v4';
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 
@@ -112,7 +130,17 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
   const [orders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
+  const [complaints] = useState<SellerComplaint[]>(seededSellerComplaints);
+  const [testimonials] = useState<ClientTestimonial[]>(seededTestimonials);
   const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
+  const [siteVisits, setSiteVisits] = useState(0);
+
+  useEffect(() => {
+    const key = 'min-shop-site-visits';
+    const next = Number(localStorage.getItem(key) ?? '0') + 1;
+    localStorage.setItem(key, String(next));
+    setSiteVisits(next);
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -129,6 +157,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         products?: MarketplaceProduct[];
         reviews?: SellerReview[];
         recruitmentOffers?: RecruitmentOffer[];
+        siteVisits?: number;
       };
 
       if (parsed.locale === 'fr' || parsed.locale === 'en') setLocale(parsed.locale);
@@ -140,14 +169,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.products?.length) setProducts(parsed.products);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
       if (parsed.recruitmentOffers?.length) setRecruitmentOffers(parsed.recruitmentOffers);
+      if (typeof parsed.siteVisits === 'number') setSiteVisits(parsed.siteVisits);
     } catch {
       // Ignore localStorage parsing errors.
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers }));
-  }, [locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers, siteVisits }));
+  }, [locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers, siteVisits]);
 
   const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
@@ -173,7 +203,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     phone: user.phone,
     avatar: user.avatar ?? defaultAvatar,
     sellerId: user.sellerId,
-    sellerType: user.sellerType
+    sellerType: user.sellerType,
+    createdAt: user.createdAt,
+    preferences: user.preferences ?? []
   });
 
   const login = (email: string, password: string) => {
@@ -193,6 +225,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (!payload.email.includes('@')) return { ok: false, message: t('Email invalide.', 'Invalid email.') };
     if (payload.password.length < 8) return { ok: false, message: t('Mot de passe trop court (8+).', 'Password too short (8+).') };
     if (!payload.phone.trim()) return { ok: false, message: t('Telephone requis.', 'Phone is required.') };
+    const expectedPrefix = countryPhonePrefixes[payload.country] ?? '+';
+    if (!payload.phone.startsWith(expectedPrefix)) {
+      return {
+        ok: false,
+        message: t(`Le numero doit commencer par ${expectedPrefix}.`, `Phone number must start with ${expectedPrefix}.`)
+      };
+    }
 
     const exists = users.some((user) => user.email.toLowerCase() === payload.email.toLowerCase());
     if (exists) return { ok: false, message: t('Cet email existe deja.', 'This email already exists.') };
@@ -212,7 +251,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       phone: payload.phone,
       avatar: defaultAvatar,
       sellerId,
-      sellerType
+      sellerType,
+      createdAt: new Date().toISOString().slice(0, 10),
+      preferences: payload.preferences ?? []
     };
 
     setUsers((current) => [nextUser, ...current]);
@@ -234,7 +275,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           phone: payload.phone,
           country: payload.country,
           city: payload.city,
-          verified: sellerType === 'company',
+          verified: false,
+          identityVerified: false,
           sellerType,
           about: 'Nouveau vendeur Min-shop.'
         },
@@ -321,6 +363,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     stock: number;
     categorySlug: string;
     images: string[];
+    kind?: 'product' | 'service';
+    serviceDuration?: string;
+    serviceAvailability?: string;
+    targetCountries?: string[];
   }) => {
     if (!sessionUser?.sellerId) return { ok: false, message: t('Acces vendeur requis.', 'Seller access required.') };
 
@@ -343,7 +389,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       description: payload.description,
       price: payload.price,
       oldPrice: null,
-      stock: payload.stock,
+      stock: seller.sellerType === 'dropshipper' ? 0 : payload.stock,
       images: payload.images.length ? payload.images : [
         'https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'
       ],
@@ -356,7 +402,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       sellerCity: seller.city,
       badges: ['new'],
       averageRating: 4.0,
-      viewCount: 0
+      viewCount: 0,
+      kind: payload.kind ?? 'product',
+      serviceDuration: payload.serviceDuration,
+      serviceAvailability: payload.serviceAvailability,
+      targetCountries: payload.targetCountries?.length ? payload.targetCountries : [seller.country]
     };
 
     setProducts((current) => [product, ...current]);
@@ -407,6 +457,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     stock: number;
     categorySlug: string;
     images: string[];
+    kind?: 'product' | 'service';
+    serviceDuration?: string;
+    serviceAvailability?: string;
+    targetCountries?: string[];
   }) => {
     if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
     const seller = sellers.find((entry) => entry.id === payload.sellerId);
@@ -430,7 +484,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       sellerCity: seller.city,
       badges: ['new'],
       averageRating: 4.0,
-      viewCount: 0
+      viewCount: 0,
+      kind: payload.kind ?? 'product',
+      serviceDuration: payload.serviceDuration,
+      serviceAvailability: payload.serviceAvailability,
+      targetCountries: payload.targetCountries?.length ? payload.targetCountries : [seller.country]
     };
     setProducts((current) => [product, ...current]);
     return { ok: true, message: t('Produit ajoute par admin.', 'Product added by admin.') };
@@ -530,6 +588,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           country: targetUser.country,
           city: targetUser.city,
           verified: false,
+          identityVerified: false,
           sellerType: 'min_shop',
           about: 'Nouveau vendeur Min-shop.'
         },
@@ -559,6 +618,21 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
   const t = (fr: string, en: string) => (locale === 'fr' ? fr : en);
 
+  useEffect(() => {
+    setSellers((current) => {
+      let changed = false;
+      const next = current.map((seller) => {
+        const trust = getSellerTrustStats(seller, products, reviews, orders, complaints);
+        if (seller.verified !== trust.hasBadge) {
+          changed = true;
+          return { ...seller, verified: trust.hasBadge };
+        }
+        return seller;
+      });
+      return changed ? next : current;
+    });
+  }, [products, reviews, orders, complaints]);
+
   return (
     <SiteContext.Provider
       value={{
@@ -575,7 +649,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         products,
         orders,
         reviews,
+        complaints,
+        testimonials,
         recruitmentOffers,
+        siteVisits,
         login,
         register,
         logout,

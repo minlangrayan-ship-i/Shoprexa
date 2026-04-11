@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getSellerDashboardData, getSellerProducts, rankSellersByRating } from '@/lib/mock-marketplace';
+import { getSellerDashboardData, getSellerProducts, getSellerTrustStats, rankSellersByRating } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
@@ -18,11 +18,31 @@ function Stars({ value }: { value: number }) {
 }
 
 export default function SellersPage() {
-  const { country, city, sessionUser, sellers, products, orders, reviews, addReview, t } = useSite();
+  const { country, city, sessionUser, sellers, products, orders, reviews, complaints, addReview, t } = useSite();
   const [selectedSellerId, setSelectedSellerId] = useState<string>('');
   const [reviewStatus, setReviewStatus] = useState('');
+  const [sellerType, setSellerType] = useState<'all' | 'min_shop' | 'dropshipper' | 'company'>('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [niche, setNiche] = useState('');
+  const [zone, setZone] = useState<'city' | 'country' | 'all'>('country');
 
-  const rankedSellers = useMemo(() => rankSellersByRating(reviews, country, city), [city, country, reviews]);
+  const rankedSellers = useMemo(() => {
+    const base = zone === 'city'
+      ? rankSellersByRating(reviews, country, city, sellers)
+      : zone === 'country'
+        ? rankSellersByRating(reviews, country, undefined, sellers)
+        : rankSellersByRating(reviews, undefined, undefined, sellers);
+
+    return base.filter((seller) => {
+      if (sellerType !== 'all' && seller.sellerType !== sellerType) return false;
+      if (verifiedOnly && !seller.verified) return false;
+      if (niche) {
+        const sellerProducts = getSellerProducts(products, seller.id);
+        if (!sellerProducts.some((product) => product.categorySlug === niche)) return false;
+      }
+      return true;
+    });
+  }, [city, country, niche, products, reviews, sellerType, sellers, verifiedOnly, zone]);
 
   const selectedSeller = useMemo(
     () => sellers.find((seller) => seller.id === selectedSellerId) ?? rankedSellers[0] ?? sellers[0],
@@ -59,28 +79,59 @@ export default function SellersPage() {
           <h1 className="text-3xl font-bold">{t('Vendeurs verifies', 'Verified vendors')}</h1>
           <p className="text-slate-600">{t('Classement local pour', 'Local ranking for')} {city}, {country}</p>
         </div>
+        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+          <select value={zone} onChange={(event) => setZone(event.target.value as 'city' | 'country' | 'all')} className="rounded-lg border px-2 py-1 text-xs">
+            <option value="city">{t('Ma ville', 'My city')}</option>
+            <option value="country">{t('Mon pays', 'My country')}</option>
+            <option value="all">{t('Tous pays', 'All countries')}</option>
+          </select>
+          <select value={sellerType} onChange={(event) => setSellerType(event.target.value as 'all' | 'min_shop' | 'dropshipper' | 'company')} className="rounded-lg border px-2 py-1 text-xs">
+            <option value="all">{t('Tous types', 'All types')}</option>
+            <option value="min_shop">Vendeur Min-shop</option>
+            <option value="dropshipper">Dropshipper</option>
+            <option value="company">{t('Entreprise', 'Company')}</option>
+          </select>
+          <select value={niche} onChange={(event) => setNiche(event.target.value)} className="rounded-lg border px-2 py-1 text-xs">
+            <option value="">{t('Toutes niches', 'All niches')}</option>
+            <option value="energie">Energie</option>
+            <option value="cuisine">Cuisine</option>
+            <option value="securite">Securite</option>
+            <option value="mobilite">Mobilite</option>
+            <option value="fitness">Fitness</option>
+            <option value="organisation">Organisation</option>
+          </select>
+          <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs">
+            <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
+            {t('Verifies uniquement', 'Verified only')}
+          </label>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         {rankedSellers.map((seller) => {
           const sellerReviewCount = reviews.filter((review) => review.sellerId === seller.id).length;
           const sellerProducts = getSellerProducts(products, seller.id);
+          const trust = getSellerTrustStats(seller, products, reviews, orders, complaints);
 
           return (
             <article key={seller.id} className="rounded-2xl border bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">{seller.company}</h2>
-                <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">{seller.verified ? t('Verifie', 'Verified') : t('Nouveau', 'New')}</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                  {trust.hasBadge ? t('Verifie Shoprex', 'Shoprex Verified') : t('Sans badge', 'No badge')}
+                </span>
               </div>
 
               <p className="mt-2 text-sm text-slate-600">{seller.name}</p>
               <p className="text-xs text-slate-500">{seller.city}, {seller.country}</p>
               <p className="text-xs font-semibold text-slate-500">Type: {seller.sellerType}</p>
               <p className="mt-1 text-xs text-slate-500">{seller.about}</p>
+              <p className="mt-1 text-xs text-slate-500">+{trust.satisfiedClients} {t('clients satisfaits', 'satisfied clients')}</p>
 
               <div className="mt-3">
                 <Stars value={seller.averageRating} />
                 <p className="text-xs text-slate-500">{sellerReviewCount} {t('avis clients', 'customer reviews')}</p>
+                <p className="text-xs text-slate-500">{t('Satisfaction', 'Satisfaction')}: {trust.satisfactionRate}%</p>
               </div>
 
               <div className="mt-3 space-y-1 text-xs text-slate-600">

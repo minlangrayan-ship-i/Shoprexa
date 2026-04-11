@@ -27,7 +27,14 @@ export default function SellerProductsPage() {
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
       categorySlug: String(formData.get('categorySlug')),
-      images
+      images,
+      kind: String(formData.get('kind')) as 'product' | 'service',
+      serviceDuration: String(formData.get('serviceDuration') ?? ''),
+      serviceAvailability: String(formData.get('serviceAvailability') ?? ''),
+      targetCountries: String(formData.get('targetCountries') ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
     });
 
     setStatus(result.message);
@@ -45,6 +52,10 @@ export default function SellerProductsPage() {
             <input required name="name" placeholder="Nom produit" className="rounded-lg border px-3 py-2" />
             <input required name="price" type="number" min="1" placeholder="Prix" className="rounded-lg border px-3 py-2" />
             <input required name="stock" type="number" min="0" placeholder="Stock" className="rounded-lg border px-3 py-2" />
+            <select name="kind" className="rounded-lg border px-3 py-2">
+              <option value="product">Produit</option>
+              <option value="service">Service</option>
+            </select>
             <select name="categorySlug" className="rounded-lg border px-3 py-2">
               <option value="energie">Energie</option>
               <option value="cuisine">Cuisine</option>
@@ -53,8 +64,11 @@ export default function SellerProductsPage() {
               <option value="fitness">Fitness</option>
               <option value="organisation">Organisation</option>
             </select>
+            <input name="serviceDuration" placeholder="Duree service (optionnel)" className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <input name="serviceAvailability" placeholder="Disponibilite service (optionnel)" className="rounded-lg border px-3 py-2 md:col-span-2" />
             <textarea required name="description" placeholder="Description" className="h-24 rounded-lg border px-3 py-2 md:col-span-2" />
             <input name="images" placeholder="URLs images (separees par virgule)" className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <input name="targetCountries" placeholder="Pays cibles (virgules)" className="rounded-lg border px-3 py-2 md:col-span-2" />
             <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-2">Ajouter le produit</button>
             {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
           </div>
@@ -68,7 +82,7 @@ export default function SellerProductsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{product.name}</p>
-                    <p className="text-xs text-slate-500">{formatPrice(product.price)} - Stock {product.stock}</p>
+                    <p className="text-xs text-slate-500">{product.kind === 'service' ? 'Service' : 'Produit'} - {formatPrice(product.price)} - Stock {product.stock}</p>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => updateSellerProduct(product.id, { stock: product.stock + 1 })} className="rounded border px-3 py-1 text-xs">+ Stock</button>

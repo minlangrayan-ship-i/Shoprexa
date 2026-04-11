@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { africaCountries } from '@/lib/mock-marketplace';
+import { africaCountries, countryPhonePrefixes } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function RegisterPage() {
@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const { register, t } = useSite();
   const [country, setCountry] = useState(africaCountries[0].country);
   const [role, setRole] = useState<'client' | 'seller'>('client');
+  const [preferences, setPreferences] = useState<string[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +29,8 @@ export default function RegisterPage() {
       role: String(formData.get('role')) as 'client' | 'seller',
       sellerType: String(formData.get('sellerType') ?? 'min_shop') as 'min_shop' | 'dropshipper' | 'company',
       country: String(formData.get('country')),
-      city: String(formData.get('city'))
+      city: String(formData.get('city')),
+      preferences
     };
 
     const result = register(payload);
@@ -52,7 +54,12 @@ export default function RegisterPage() {
         <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
           <input required name="name" placeholder={t('Nom complet', 'Full name')} className="rounded-xl border px-3 py-2" />
           <input required type="email" name="email" placeholder="Email" className="rounded-xl border px-3 py-2" />
-          <input required name="phone" placeholder={t('WhatsApp / Telephone', 'WhatsApp / Phone')} className="rounded-xl border px-3 py-2" />
+          <input
+            required
+            name="phone"
+            placeholder={`${t('WhatsApp / Telephone', 'WhatsApp / Phone')} (${countryPhonePrefixes[country] ?? '+'}...)`}
+            className="rounded-xl border px-3 py-2"
+          />
           <input required minLength={8} type="password" name="password" placeholder={t('Mot de passe (8+)', 'Password (8+)')} className="rounded-xl border px-3 py-2" />
 
           <select required name="role" value={role} onChange={(event) => setRole(event.target.value as 'client' | 'seller')} className="rounded-xl border px-3 py-2">
@@ -87,6 +94,35 @@ export default function RegisterPage() {
               <option key={entry} value={entry}>{entry}</option>
             ))}
           </select>
+
+          {role === 'client' ? (
+            <div className="rounded-xl border p-3 md:col-span-2">
+              <p className="mb-2 text-sm font-semibold">{t('Vos preferences produits', 'Your product preferences')}</p>
+              <div className="grid gap-2 text-sm md:grid-cols-3">
+                {[
+                  ['energie', 'Energie'],
+                  ['cuisine', 'Cuisine'],
+                  ['securite', 'Securite'],
+                  ['mobilite', 'Mobilite'],
+                  ['fitness', 'Fitness'],
+                  ['organisation', 'Organisation']
+                ].map(([slug, label]) => (
+                  <label key={slug} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={preferences.includes(slug)}
+                      onChange={(event) =>
+                        setPreferences((current) =>
+                          event.target.checked ? [...current, slug] : current.filter((entry) => entry !== slug)
+                        )
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <button disabled={loading} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white md:col-span-2">
             {loading ? t('Creation...', 'Creating...') : t('Creer mon compte', 'Create my account')}

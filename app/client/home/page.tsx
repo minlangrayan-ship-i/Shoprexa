@@ -7,7 +7,7 @@ import { rankSellersByRating } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function ClientHomePage() {
-  const { sessionUser, country, city, products, sellers, reviews, t } = useSite();
+  const { sessionUser, country, city, products, sellers, reviews, testimonials, t } = useSite();
 
   const localProducts = useMemo(() => {
     return products
@@ -30,11 +30,25 @@ export default function ClientHomePage() {
           city: product.sellerCity
         },
         badges: product.badges,
-        averageRating: product.averageRating
+        averageRating: product.averageRating,
+        kind: product.kind,
+        serviceDuration: product.serviceDuration,
+        serviceAvailability: product.serviceAvailability
       }));
   }, [city, country, products]);
 
-  const topSeller = useMemo(() => rankSellersByRating(reviews, country, city)[0], [city, country, reviews]);
+  const preferenceProducts = useMemo(() => {
+    const preferred = sessionUser?.preferences ?? [];
+    if (preferred.length === 0) return localProducts;
+    return localProducts.filter((product) => preferred.includes(product.category.name.toLowerCase())).slice(0, 6);
+  }, [localProducts, sessionUser?.preferences]);
+
+  const regionalTestimonials = useMemo(
+    () => testimonials.filter((entry) => entry.country === country).slice(0, 3),
+    [country, testimonials]
+  );
+
+  const topSeller = useMemo(() => rankSellersByRating(reviews, country, city, sellers)[0], [city, country, reviews, sellers]);
 
   if (!sessionUser || sessionUser.role !== 'client') {
     return (
@@ -63,8 +77,14 @@ export default function ClientHomePage() {
       </div>
 
       <div className="mt-10">
-        <h2 className="text-2xl font-bold">{t('Produits recommandes', 'Recommended products')}</h2>
-        <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{localProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        <h2 className="text-2xl font-bold">{t('Produits recommandes selon vos preferences', 'Recommended products from your preferences')}</h2>
+        <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{preferenceProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        <p className="mt-3 text-xs text-slate-500">
+          {t(
+            'Suggestion anonyme: des clients au profil proche du votre ont aussi achete des produits Energie et Securite cette semaine.',
+            'Anonymous hint: customers with a similar profile also bought Energy and Security products this week.'
+          )}
+        </p>
       </div>
 
       <div className="mt-10 rounded-xl border bg-white p-5">
@@ -75,6 +95,19 @@ export default function ClientHomePage() {
               <p className="font-semibold">{seller.company}</p>
               <p className="text-slate-600">{seller.city}, {seller.country}</p>
             </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-10 rounded-xl border bg-white p-5">
+        <h3 className="text-lg font-bold">{t('Temoignages clients de votre region', 'Testimonials from your region')}</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {regionalTestimonials.map((item) => (
+            <article key={item.id} className="rounded-lg border p-3 text-sm">
+              <p className="font-semibold">{item.name} - {item.city}</p>
+              <p className="text-amber-600">{item.rating}/5</p>
+              <p className="text-slate-600">{item.comment}</p>
+            </article>
           ))}
         </div>
       </div>

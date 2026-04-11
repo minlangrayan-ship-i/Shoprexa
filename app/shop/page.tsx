@@ -9,6 +9,7 @@ export default function ShopPage() {
   const { country, city, products, t } = useSite();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [offerType, setOfferType] = useState<'all' | 'product' | 'service'>('all');
   const [sort, setSort] = useState<'popular' | 'price_asc' | 'price_desc' | 'rating'>('popular');
 
   const filteredProducts = useMemo(() => {
@@ -29,6 +30,7 @@ export default function ShopPage() {
     }
 
     if (category) result = result.filter((product) => product.categorySlug === category);
+    if (offerType !== 'all') result = result.filter((product) => (product.kind ?? 'product') === offerType);
 
     if (sort === 'price_asc') result = [...result].sort((a, b) => a.price - b.price);
     if (sort === 'price_desc') result = [...result].sort((a, b) => b.price - a.price);
@@ -51,10 +53,13 @@ export default function ShopPage() {
         country: product.sellerCountry,
         city: product.sellerCity
       },
-      badges: product.badges,
-      averageRating: product.averageRating
-    }));
-  }, [category, city, country, products, query, sort]);
+        badges: product.badges,
+        averageRating: product.averageRating,
+        kind: product.kind,
+        serviceDuration: product.serviceDuration,
+        serviceAvailability: product.serviceAvailability
+      }));
+  }, [category, city, country, offerType, products, query, sort]);
 
   return (
     <section className="section py-10">
@@ -65,7 +70,7 @@ export default function ShopPage() {
         </div>
       </div>
 
-      <div className="card mt-6 grid gap-3 p-4 md:grid-cols-4">
+      <div className="card mt-6 grid gap-3 p-4 md:grid-cols-5">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -85,6 +90,12 @@ export default function ShopPage() {
           <option value="rating">{t('Mieux notes', 'Top rated')}</option>
           <option value="price_asc">{t('Prix croissant', 'Price low to high')}</option>
           <option value="price_desc">{t('Prix decroissant', 'Price high to low')}</option>
+        </select>
+
+        <select value={offerType} onChange={(event) => setOfferType(event.target.value as 'all' | 'product' | 'service')} className="rounded-lg border px-3 py-2">
+          <option value="all">{t('Produits + Services', 'Products + Services')}</option>
+          <option value="product">{t('Produits uniquement', 'Products only')}</option>
+          <option value="service">{t('Services uniquement', 'Services only')}</option>
         </select>
 
         <div className="rounded-lg border border-dashed px-3 py-2 text-sm text-slate-600">{filteredProducts.length} {t('produits disponibles', 'products available')}</div>

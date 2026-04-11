@@ -1,11 +1,24 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { dropshippers, marketplaceProducts } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
 export default function DropshippersPage() {
-  const { t } = useSite();
+  const { country, t } = useSite();
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [zone, setZone] = useState<'all' | 'country'>('all');
+
+  const filtered = useMemo(
+    () =>
+      dropshippers.filter((entry) => {
+        if (zone === 'country' && entry.country !== country) return false;
+        if (verifiedOnly && !entry.email.includes('@')) return false;
+        return true;
+      }),
+    [country, verifiedOnly, zone]
+  );
 
   return (
     <section className="section py-12">
@@ -17,8 +30,19 @@ export default function DropshippersPage() {
         )}
       </p>
 
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <select value={zone} onChange={(event) => setZone(event.target.value as 'all' | 'country')} className="rounded-lg border px-2 py-1">
+          <option value="all">{t('Tous pays', 'All countries')}</option>
+          <option value="country">{t('Mon pays', 'My country')}</option>
+        </select>
+        <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1">
+          <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
+          {t('Partenaires qualifies', 'Qualified partners')}
+        </label>
+      </div>
+
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        {dropshippers.map((dropshipper) => {
+        {filtered.map((dropshipper) => {
           const products = marketplaceProducts.filter((product) => dropshipper.productIds.includes(product.id));
           return (
             <article key={dropshipper.id} className="card p-6">

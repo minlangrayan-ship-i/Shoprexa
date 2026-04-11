@@ -37,7 +37,10 @@ export default function SellerPublicStorePage() {
         city: product.sellerCity
       },
       badges: product.badges,
-      averageRating: product.averageRating
+      averageRating: product.averageRating,
+      kind: product.kind,
+      serviceDuration: product.serviceDuration,
+      serviceAvailability: product.serviceAvailability
     }));
 
   return (

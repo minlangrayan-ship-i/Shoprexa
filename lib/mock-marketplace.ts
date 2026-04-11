@@ -17,6 +17,7 @@ export type MarketplaceSeller = {
   country: string;
   city: string;
   verified: boolean;
+  identityVerified: boolean;
   sellerType: SellerType;
   about: string;
   logoUrl?: string;
@@ -50,6 +51,10 @@ export type MarketplaceProduct = {
   badges: Array<'new' | 'popular' | 'low_stock'>;
   averageRating: number;
   viewCount: number;
+  kind?: 'product' | 'service';
+  serviceDuration?: string;
+  serviceAvailability?: string;
+  targetCountries?: string[];
 };
 
 export type SellerReview = {
@@ -84,6 +89,8 @@ export type DemoUser = {
   avatar?: string;
   sellerId?: string;
   sellerType?: SellerType;
+  createdAt: string;
+  preferences?: string[];
 };
 
 export type RecruitmentOffer = {
@@ -93,6 +100,23 @@ export type RecruitmentOffer = {
   productIds: string[];
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
+};
+
+export type SellerComplaint = {
+  id: string;
+  sellerId: string;
+  reason: string;
+  severity: 'low' | 'medium' | 'high';
+  createdAt: string;
+};
+
+export type ClientTestimonial = {
+  id: string;
+  country: string;
+  city: string;
+  name: string;
+  rating: number;
+  comment: string;
 };
 
 export const defaultAvatar =
@@ -107,6 +131,17 @@ export const africaCountries: CountryOption[] = [
   { country: 'Nigeria', cities: ['Lagos', 'Abuja', 'Kano'] },
   { country: 'Kenya', cities: ['Nairobi', 'Mombasa', 'Kisumu'] }
 ];
+
+export const countryPhonePrefixes: Record<string, string> = {
+  'Cameroun': '+237',
+  'Cote d\'Ivoire': '+225',
+  'Senegal': '+221',
+  'Congo': '+242',
+  'Tchad': '+235',
+  'Nigeria': '+234',
+  'Kenya': '+254',
+  'France': '+33'
+};
 
 export const marketplaceCategories = [
   { label: 'Energie', slug: 'energie' },
@@ -129,6 +164,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Cameroun',
     city: 'Yaounde',
     verified: true,
+    identityVerified: true,
     sellerType: 'min_shop',
     about: 'Solutions energie et cuisine pour foyers, etudiants et petits commerces.'
   },
@@ -143,6 +179,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Cote d\'Ivoire',
     city: 'Abidjan',
     verified: true,
+    identityVerified: true,
     sellerType: 'company',
     about: 'Equipements securite et organisation pour familles et commerces urbains.'
   },
@@ -157,6 +194,7 @@ export const sellerProfiles: MarketplaceSeller[] = [
     country: 'Nigeria',
     city: 'Lagos',
     verified: true,
+    identityVerified: false,
     sellerType: 'dropshipper',
     about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.'
   }
@@ -338,7 +376,11 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     sellerCity: 'Abidjan',
     badges: ['new'],
     averageRating: 4.5,
-    viewCount: 298
+    viewCount: 298,
+    kind: 'service',
+    serviceDuration: '2h installation + 30min configuration',
+    serviceAvailability: 'Lun-Sam, 08:00-18:00',
+    targetCountries: ['Cote d\'Ivoire', 'Cameroun']
   },
   {
     id: 'prod-7',
@@ -378,7 +420,11 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     sellerCity: 'Abidjan',
     badges: [],
     averageRating: 4.2,
-    viewCount: 180
+    viewCount: 180,
+    kind: 'service',
+    serviceDuration: 'Audit securite de 3h',
+    serviceAvailability: 'Sur rendez-vous',
+    targetCountries: ['Cote d\'Ivoire', 'Senegal']
   },
   {
     id: 'prod-9',
@@ -501,6 +547,96 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     viewCount: 447
   },
   {
+    id: 'prod-19',
+    slug: 'poivre-penja-premium',
+    name: 'Poivre de Penja premium 250g',
+    description: 'Epice locale premium tres prisee pour cuisine familiale et restauration.',
+    price: 9800,
+    oldPrice: null,
+    stock: 64,
+    images: imageSets.kitchen,
+    category: 'Cuisine',
+    categorySlug: 'cuisine',
+    problemTag: 'Produits locaux Cameroun',
+    sellerId: 'seller-1',
+    companyName: 'Sahel Energy Tools',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Douala',
+    badges: ['new', 'popular'],
+    averageRating: 4.5,
+    viewCount: 312,
+    kind: 'product',
+    targetCountries: ['Cameroun', 'Congo', 'Tchad']
+  },
+  {
+    id: 'prod-20',
+    slug: 'artisanat-senegal-pack',
+    name: 'Pack artisanat Senegal',
+    description: 'Selection d articles artisanaux pour decoration et cadeaux.',
+    price: 21500,
+    oldPrice: 24900,
+    stock: 27,
+    images: imageSets.organization,
+    category: 'Organisation',
+    categorySlug: 'organisation',
+    problemTag: 'Produits locaux Senegal',
+    sellerId: 'seller-2',
+    companyName: 'Secure Home West',
+    sellerCountry: 'Senegal',
+    sellerCity: 'Dakar',
+    badges: ['new'],
+    averageRating: 4.3,
+    viewCount: 205,
+    kind: 'product',
+    targetCountries: ['Senegal', 'Cote d\'Ivoire', 'Cameroun']
+  },
+  {
+    id: 'prod-21',
+    slug: 'conciergerie-livraison-pro',
+    name: 'Service conciergerie livraison pro',
+    description: 'Service entreprise: suivi logistique et coordination des expeditions multi-pays.',
+    price: 45000,
+    oldPrice: null,
+    stock: 999,
+    images: imageSets.mobility,
+    category: 'Mobilite',
+    categorySlug: 'mobilite',
+    problemTag: 'Service logistique',
+    sellerId: 'seller-2',
+    companyName: 'Secure Home West',
+    sellerCountry: 'Cote d\'Ivoire',
+    sellerCity: 'Abidjan',
+    badges: ['popular'],
+    averageRating: 4.4,
+    viewCount: 267,
+    kind: 'service',
+    serviceDuration: 'Contrat mensuel',
+    serviceAvailability: '7j/7',
+    targetCountries: ['Cote d\'Ivoire', 'Cameroun', 'Nigeria', 'Senegal']
+  },
+  {
+    id: 'prod-22',
+    slug: 'gadgets-tech-lagos-bundle',
+    name: 'Bundle gadgets tech Lagos',
+    description: 'Accessoires tech populaires au Nigeria pour etudiants et freelances.',
+    price: 34900,
+    oldPrice: 39500,
+    stock: 31,
+    images: imageSets.power,
+    category: 'Energie',
+    categorySlug: 'energie',
+    problemTag: 'Produits locaux Nigeria',
+    sellerId: 'seller-3',
+    companyName: 'Urban Mobility Lab',
+    sellerCountry: 'Nigeria',
+    sellerCity: 'Lagos',
+    badges: ['new'],
+    averageRating: 4.2,
+    viewCount: 198,
+    kind: 'product',
+    targetCountries: ['Nigeria', 'Kenya', 'Cameroun']
+  },
+  {
     id: 'prod-15',
     slug: 'boite-rangement-modulaire',
     name: 'Boite rangement modulaire',
@@ -578,7 +714,9 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     sellerCity: 'Abidjan',
     badges: ['low_stock'],
     averageRating: 4.8,
-    viewCount: 434
+    viewCount: 434,
+    kind: 'product',
+    targetCountries: ['Cote d\'Ivoire', 'Cameroun']
   }
 ];
 
@@ -597,7 +735,20 @@ export const seededSellerOrders: SellerOrder[] = [
   { id: 'ord-3', sellerId: 'seller-2', productId: 'prod-5', customerName: 'Koffi', quantity: 3, total: 51600, status: 'paid', createdAt: '2026-04-08' },
   { id: 'ord-4', sellerId: 'seller-2', productId: 'prod-18', customerName: 'Ruth', quantity: 1, total: 64900, status: 'shipped', createdAt: '2026-04-09' },
   { id: 'ord-5', sellerId: 'seller-3', productId: 'prod-9', customerName: 'Tunde', quantity: 1, total: 689000, status: 'delivered', createdAt: '2026-04-06' },
-  { id: 'ord-6', sellerId: 'seller-3', productId: 'prod-17', customerName: 'Ayo', quantity: 2, total: 29000, status: 'pending', createdAt: '2026-04-09' }
+  { id: 'ord-6', sellerId: 'seller-3', productId: 'prod-17', customerName: 'Ayo', quantity: 2, total: 29000, status: 'pending', createdAt: '2026-04-09' },
+  { id: 'ord-7', sellerId: 'seller-1', productId: 'prod-2', customerName: 'Brice', quantity: 1, total: 24500, status: 'delivered', createdAt: '2026-03-20' },
+  { id: 'ord-8', sellerId: 'seller-1', productId: 'prod-3', customerName: 'Prisca', quantity: 2, total: 31800, status: 'delivered', createdAt: '2026-03-22' },
+  { id: 'ord-9', sellerId: 'seller-1', productId: 'prod-13', customerName: 'Jonas', quantity: 1, total: 21900, status: 'delivered', createdAt: '2026-03-24' },
+  { id: 'ord-10', sellerId: 'seller-1', productId: 'prod-19', customerName: 'Rita', quantity: 3, total: 29400, status: 'delivered', createdAt: '2026-03-26' },
+  { id: 'ord-11', sellerId: 'seller-1', productId: 'prod-14', customerName: 'Carine', quantity: 1, total: 52900, status: 'shipped', createdAt: '2026-03-28' },
+  { id: 'ord-12', sellerId: 'seller-1', productId: 'prod-1', customerName: 'Paul', quantity: 2, total: 37000, status: 'delivered', createdAt: '2026-03-30' },
+  { id: 'ord-13', sellerId: 'seller-1', productId: 'prod-4', customerName: 'Dora', quantity: 1, total: 13900, status: 'delivered', createdAt: '2026-04-01' },
+  { id: 'ord-14', sellerId: 'seller-1', productId: 'prod-2', customerName: 'Leo', quantity: 1, total: 24500, status: 'delivered', createdAt: '2026-04-02' },
+  { id: 'ord-15', sellerId: 'seller-2', productId: 'prod-21', customerName: 'SME Dakar', quantity: 1, total: 45000, status: 'delivered', createdAt: '2026-04-02' },
+  { id: 'ord-16', sellerId: 'seller-2', productId: 'prod-8', customerName: 'Awa', quantity: 2, total: 25600, status: 'delivered', createdAt: '2026-04-04' },
+  { id: 'ord-17', sellerId: 'seller-2', productId: 'prod-20', customerName: 'Nafi', quantity: 1, total: 21500, status: 'shipped', createdAt: '2026-04-05' },
+  { id: 'ord-18', sellerId: 'seller-3', productId: 'prod-9', customerName: 'Ife', quantity: 1, total: 689000, status: 'delivered', createdAt: '2026-04-04' },
+  { id: 'ord-19', sellerId: 'seller-3', productId: 'prod-22', customerName: 'Amina', quantity: 2, total: 69800, status: 'paid', createdAt: '2026-04-07' }
 ];
 
 export const seededSellerViews: Record<string, number[]> = {
@@ -617,6 +768,18 @@ export const seededRecruitmentOffers: RecruitmentOffer[] = [
   }
 ];
 
+export const seededSellerComplaints: SellerComplaint[] = [
+  { id: 'cmp-1', sellerId: 'seller-2', reason: 'Retard repete sur prestation', severity: 'medium', createdAt: '2026-04-06' },
+  { id: 'cmp-2', sellerId: 'seller-2', reason: 'Qualite produit jugee moyenne', severity: 'low', createdAt: '2026-04-07' }
+];
+
+export const seededTestimonials: ClientTestimonial[] = [
+  { id: 'tes-1', country: 'Cameroun', city: 'Yaounde', name: 'Client satisfait', rating: 5, comment: 'Livraison rapide et service WhatsApp tres rassurant.' },
+  { id: 'tes-2', country: 'Cameroun', city: 'Douala', name: 'Acheteuse locale', rating: 4, comment: 'Produits utiles pour le quotidien, bons vendeurs verifies.' },
+  { id: 'tes-3', country: 'Nigeria', city: 'Lagos', name: 'Startup founder', rating: 5, comment: 'Excellent suivi et delais bien annonces.' },
+  { id: 'tes-4', country: 'Senegal', city: 'Dakar', name: 'Client business', rating: 4, comment: 'Le choix des vendeurs par niche est tres pratique.' }
+];
+
 export const demoUsers: DemoUser[] = [
   {
     id: 'admin-1',
@@ -628,7 +791,9 @@ export const demoUsers: DemoUser[] = [
     city: 'Yaounde',
     phone: '+237 692714985',
     avatar: defaultAvatar,
-    sellerType: undefined
+    sellerType: undefined,
+    createdAt: '2026-01-05',
+    preferences: []
   },
   {
     id: 'client-1',
@@ -640,7 +805,9 @@ export const demoUsers: DemoUser[] = [
     city: 'Yaounde',
     phone: '+237 671111222',
     avatar: defaultAvatar,
-    sellerType: undefined
+    sellerType: undefined,
+    createdAt: '2026-02-08',
+    preferences: ['energie', 'cuisine']
   },
   {
     id: 'client-2',
@@ -652,7 +819,9 @@ export const demoUsers: DemoUser[] = [
     city: 'Dakar',
     phone: '+221 770001122',
     avatar: defaultAvatar,
-    sellerType: undefined
+    sellerType: undefined,
+    createdAt: '2026-02-17',
+    preferences: ['mobilite', 'organisation']
   },
   ...sellerProfiles.map((seller) => ({
     id: `user-${seller.id}`,
@@ -665,7 +834,9 @@ export const demoUsers: DemoUser[] = [
     phone: seller.phone,
     avatar: defaultAvatar,
     sellerId: seller.id,
-    sellerType: seller.sellerType
+    sellerType: seller.sellerType,
+    createdAt: '2026-03-01',
+    preferences: []
   }))
 ];
 
@@ -680,8 +851,13 @@ export function getSellerProducts(products: MarketplaceProduct[], sellerId: stri
   return products.filter((product) => product.sellerId === sellerId);
 }
 
-export function rankSellersByRating(reviews: SellerReview[], country?: string, city?: string) {
-  const sellers = sellerProfiles.filter((seller) => {
+export function rankSellersByRating(
+  reviews: SellerReview[],
+  country?: string,
+  city?: string,
+  baseSellers: MarketplaceSeller[] = sellerProfiles
+) {
+  const sellers = baseSellers.filter((seller) => {
     if (country && seller.country !== country) return false;
     if (city && seller.city !== city) return false;
     return true;
@@ -694,6 +870,38 @@ export function rankSellersByRating(reviews: SellerReview[], country?: string, c
       reviewCount: reviews.filter((review) => review.sellerId === seller.id).length
     }))
     .sort((a, b) => b.averageRating - a.averageRating || b.reviewCount - a.reviewCount);
+}
+
+export function getSellerTrustStats(
+  seller: MarketplaceSeller,
+  products: MarketplaceProduct[],
+  reviews: SellerReview[],
+  orders: SellerOrder[],
+  complaints: SellerComplaint[]
+) {
+  const sellerProducts = products.filter((product) => product.sellerId === seller.id);
+  const sellerOrders = orders.filter((order) => order.sellerId === seller.id);
+  const successfulOrders = sellerOrders.filter((order) => order.status === 'delivered' || order.status === 'shipped').length;
+  const satisfiedClients = reviews.filter((review) => review.sellerId === seller.id && review.rating >= 3.5).length;
+  const totalOrders = sellerOrders.length;
+  const satisfactionRate = totalOrders === 0 ? 0 : Math.round((satisfiedClients / totalOrders) * 100);
+  const complaintCount = complaints.filter((entry) => entry.sellerId === seller.id).length;
+  const validCatalog = sellerProducts.every((product) => product.images.length > 0 && product.description.trim().length >= 16);
+  const hasBadge =
+    seller.identityVerified &&
+    validCatalog &&
+    successfulOrders >= 10 &&
+    satisfactionRate >= 80 &&
+    complaintCount < 3;
+
+  return {
+    hasBadge,
+    successfulOrders,
+    satisfiedClients,
+    satisfactionRate,
+    complaintCount,
+    validCatalog
+  };
 }
 
 export function getSellerDashboardData(

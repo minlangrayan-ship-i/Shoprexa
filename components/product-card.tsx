@@ -6,6 +6,7 @@ import { Eye, Star } from 'lucide-react';
 import { useState } from 'react';
 import { formatPrice } from '@/lib/utils';
 import type { CartItem } from '@/lib/types';
+import { useSite } from '@/components/site-context';
 
 type Product = {
   id: string;
@@ -25,6 +26,9 @@ type Product = {
   };
   badges?: Array<'new' | 'popular' | 'low_stock'>;
   averageRating?: number;
+  kind?: 'product' | 'service';
+  serviceDuration?: string;
+  serviceAvailability?: string;
 };
 
 const badgeLabel: Record<'new' | 'popular' | 'low_stock', string> = {
@@ -34,6 +38,7 @@ const badgeLabel: Record<'new' | 'popular' | 'low_stock', string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const { country } = useSite();
   const [preview, setPreview] = useState(false);
 
   const addToCart = () => {
@@ -94,14 +99,18 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
 
+          <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${product.kind === 'service' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+            {product.kind === 'service' ? 'Service' : 'Produit'}
+          </span>
+
           <Link href={`/product/${product.slug}`} className="line-clamp-2 block text-sm font-semibold text-slate-900">
             {product.name}
           </Link>
 
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-base font-bold text-brand-700">{formatPrice(product.price)}</p>
-              {product.oldPrice ? <p className="text-xs text-slate-400 line-through">{formatPrice(product.oldPrice)}</p> : null}
+              <p className="text-base font-bold text-brand-700">{formatPrice(product.price, country)}</p>
+              {product.oldPrice ? <p className="text-xs text-slate-400 line-through">{formatPrice(product.oldPrice, country)}</p> : null}
             </div>
             <p className={`text-xs font-semibold ${product.stock <= 10 ? 'text-amber-600' : 'text-emerald-700'}`}>
               Stock: {product.stock}
@@ -118,6 +127,8 @@ export function ProductCard({ product }: { product: Product }) {
               </p>
             ) : null}
             {product.seller ? <p>{product.seller.city}, {product.seller.country}</p> : null}
+            {product.kind === 'service' && product.serviceDuration ? <p>Duree: {product.serviceDuration}</p> : null}
+            {product.kind === 'service' && product.serviceAvailability ? <p>Disponibilite: {product.serviceAvailability}</p> : null}
           </div>
 
           <button onClick={addToCart} className="w-full rounded-xl bg-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
@@ -135,7 +146,7 @@ export function ProductCard({ product }: { product: Product }) {
             <h3 className="mt-3 text-lg font-bold">{product.name}</h3>
             <p className="mt-1 text-sm text-slate-600">{product.description ?? 'Produit tendance du catalogue Min-shop.'}</p>
             <div className="mt-3 flex items-center justify-between">
-              <p className="font-bold text-brand-700">{formatPrice(product.price)}</p>
+              <p className="font-bold text-brand-700">{formatPrice(product.price, country)}</p>
               <Link href={`/product/${product.slug}`} className="rounded-lg bg-dark px-3 py-2 text-xs font-semibold text-white">
                 Voir la fiche complete
               </Link>
