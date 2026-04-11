@@ -7,13 +7,13 @@ import { useSite } from '@/components/site-context';
 
 export default function SellerPublicStorePage() {
   const params = useParams<{ slug: string }>();
-  const { sellers, products } = useSite();
+  const { sellers, products, t } = useSite();
 
   const seller = sellers.find((entry) => entry.slug === params.slug || entry.id === params.slug);
   if (!seller) {
     return (
       <section className="section py-12">
-        <div className="rounded-xl border bg-white p-6">Boutique vendeur introuvable.</div>
+        <div className="rounded-xl border bg-white p-6">{t('Boutique vendeur introuvable.', 'Seller store not found.')}</div>
       </section>
     );
   }
@@ -52,7 +52,7 @@ export default function SellerPublicStorePage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">{seller.company}</h1>
-            <p className="text-sm text-slate-600">{seller.city}, {seller.country} - {seller.verified ? 'Vendeur verifie' : 'Nouveau vendeur'}</p>
+            <p className="text-sm text-slate-600">{seller.city}, {seller.country} - {seller.verified ? t('Vendeur verifie', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
             <p className="text-sm text-slate-600">{seller.about}</p>
           </div>
         </div>

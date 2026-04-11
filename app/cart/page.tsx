@@ -34,7 +34,7 @@ export default function CartPage() {
           </Link>
         </div>
       ) : null}
-      {items.length === 0 ? <p className="mt-6">Panier vide.</p> : (
+      {items.length === 0 ? <p className="mt-6">{t('Panier vide.', 'Empty cart.')}</p> : (
         <div className="mt-6 grid gap-8 md:grid-cols-[1fr_320px]">
           <div className="space-y-3">
             {items.map((i) => (
@@ -44,16 +44,16 @@ export default function CartPage() {
                   <button onClick={() => persist(items.map((x) => x.id === i.id ? { ...x, quantity: Math.max(1, x.quantity - 1) } : x))} className="rounded border px-2">-</button>
                   <span>{i.quantity}</span>
                   <button onClick={() => persist(items.map((x) => x.id === i.id ? { ...x, quantity: x.quantity + 1 } : x))} className="rounded border px-2">+</button>
-                  <button onClick={() => persist(items.filter((x) => x.id !== i.id))} className="rounded border px-2 text-red-600">Supprimer</button>
+                  <button onClick={() => persist(items.filter((x) => x.id !== i.id))} className="rounded border px-2 text-red-600">{t('Supprimer', 'Remove')}</button>
                 </div>
               </div>
             ))}
           </div>
           <aside className="card h-fit p-5">
-            <p className="text-sm">Total</p>
+            <p className="text-sm">{t('Total', 'Total')}</p>
             <p className="text-2xl font-bold">{formatPrice(total, country)}</p>
             {sessionUser && sessionUser.role === 'client' ? (
-              <a href="/checkout" className="mt-4 block rounded-xl bg-dark px-4 py-2 text-center font-semibold text-white">Passer au checkout</a>
+              <a href="/checkout" className="mt-4 block rounded-xl bg-dark px-4 py-2 text-center font-semibold text-white">{t('Passer au paiement', 'Proceed to checkout')}</a>
             ) : (
               <button disabled className="mt-4 block w-full rounded-xl bg-slate-300 px-4 py-2 text-center font-semibold text-slate-600">
                 {t('Commande reservee aux comptes clients', 'Ordering is reserved for client accounts')}

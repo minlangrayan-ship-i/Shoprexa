@@ -31,12 +31,6 @@ type Product = {
   serviceAvailability?: string;
 };
 
-const badgeLabel: Record<'new' | 'popular' | 'low_stock', string> = {
-  new: 'Nouveau',
-  popular: 'Populaire',
-  low_stock: 'Stock faible'
-};
-
 export function ProductCard({ product }: { product: Product }) {
   const { country, sessionUser, t } = useSite();
   const [preview, setPreview] = useState(false);
@@ -84,7 +78,7 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="absolute left-3 top-3 flex flex-wrap gap-2">
             {(product.badges ?? []).slice(0, 2).map((badge) => (
               <span key={badge} className="rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-slate-700">
-                {badgeLabel[badge]}
+                {badge === 'new' ? t('Nouveau', 'New') : badge === 'popular' ? t('Populaire', 'Popular') : t('Stock faible', 'Low stock')}
               </span>
             ))}
           </div>
@@ -93,7 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
             onClick={() => setPreview(true)}
             className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white"
           >
-            <Eye size={13} /> Apercu
+            <Eye size={13} /> {t('Apercu', 'Preview')}
           </button>
         </div>
 
@@ -106,7 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
 
           <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${product.kind === 'service' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
-            {product.kind === 'service' ? 'Service' : 'Produit'}
+            {product.kind === 'service' ? t('Service', 'Service') : t('Produit', 'Product')}
           </span>
 
           <Link href={`/product/${product.slug}`} className="line-clamp-2 block text-sm font-semibold text-slate-900">
@@ -119,26 +113,26 @@ export function ProductCard({ product }: { product: Product }) {
               {product.oldPrice ? <p className="text-xs text-slate-400 line-through">{formatPrice(product.oldPrice, country)}</p> : null}
             </div>
             <p className={`text-xs font-semibold ${product.stock <= 10 ? 'text-amber-600' : 'text-emerald-700'}`}>
-              Stock: {product.stock}
+              {t('Stock', 'Stock')}: {product.stock}
             </p>
           </div>
 
           <div className="space-y-1 text-xs text-slate-600">
             {product.seller ? (
               <p>
-                Vendeur:{' '}
+                {t('Vendeur', 'Seller')}:{' '}
                 <Link href={`/seller/${product.seller.id}`} className="font-semibold text-brand-700 hover:underline">
                   {product.seller.companyName}
                 </Link>
               </p>
             ) : null}
             {product.seller ? <p>{product.seller.city}, {product.seller.country}</p> : null}
-            {product.kind === 'service' && product.serviceDuration ? <p>Duree: {product.serviceDuration}</p> : null}
-            {product.kind === 'service' && product.serviceAvailability ? <p>Disponibilite: {product.serviceAvailability}</p> : null}
+            {product.kind === 'service' && product.serviceDuration ? <p>{t('Duree', 'Duration')}: {product.serviceDuration}</p> : null}
+            {product.kind === 'service' && product.serviceAvailability ? <p>{t('Disponibilite', 'Availability')}: {product.serviceAvailability}</p> : null}
           </div>
 
           <button onClick={addToCart} className="w-full rounded-xl bg-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
-            Ajouter au panier
+            {t('Ajouter au panier', 'Add to cart')}
           </button>
           {status ? <p className="text-xs text-red-600">{status}</p> : null}
         </div>
@@ -151,11 +145,11 @@ export function ProductCard({ product }: { product: Product }) {
               <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
             </div>
             <h3 className="mt-3 text-lg font-bold">{product.name}</h3>
-            <p className="mt-1 text-sm text-slate-600">{product.description ?? 'Produit tendance du catalogue Min-shop.'}</p>
+            <p className="mt-1 text-sm text-slate-600">{product.description ?? t('Produit tendance du catalogue Min-shop.', 'Trending product from Min-shop catalog.')}</p>
             <div className="mt-3 flex items-center justify-between">
               <p className="font-bold text-brand-700">{formatPrice(product.price, country)}</p>
               <Link href={`/product/${product.slug}`} className="rounded-lg bg-dark px-3 py-2 text-xs font-semibold text-white">
-                Voir la fiche complete
+                {t('Voir la fiche complete', 'View full details')}
               </Link>
             </div>
           </div>

@@ -13,7 +13,7 @@ const WHATSAPP_NUMBER = '237692714985';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
-  const { products, sellers, country } = useSite();
+  const { products, sellers, country, t } = useSite();
 
   const product = useMemo(() => products.find((entry) => entry.slug === params.slug), [params.slug, products]);
   const [activeImage, setActiveImage] = useState(0);
@@ -21,7 +21,7 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <section className="section py-12">
-        <div className="rounded-xl border bg-white p-6">Produit introuvable.</div>
+        <div className="rounded-xl border bg-white p-6">{t('Produit introuvable.', 'Product not found.')}</div>
       </section>
     );
   }
@@ -78,7 +78,7 @@ export default function ProductDetailPage() {
         <div>
           <p className="text-sm font-semibold text-brand-700">{product.category}</p>
           <p className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${product.kind === 'service' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
-            {product.kind === 'service' ? 'Service' : 'Produit'}
+            {product.kind === 'service' ? t('Service', 'Service') : t('Produit', 'Product')}
           </p>
           <h1 className="mt-2 text-3xl font-bold">{product.name}</h1>
 
@@ -96,28 +96,28 @@ export default function ProductDetailPage() {
 
           <div className="mt-4 space-y-1 text-sm text-slate-700">
             <p>
-              Vendeur:{' '}
+              {t('Vendeur', 'Seller')}:{' '}
               <Link href={`/seller/${seller?.slug ?? product.sellerId}`} className="font-semibold text-brand-700 hover:underline">
                 {product.companyName}
               </Link>
             </p>
-            <p>Localisation: {product.sellerCity}, {product.sellerCountry}</p>
+            <p>{t('Localisation', 'Location')}: {product.sellerCity}, {product.sellerCountry}</p>
             <p className={product.stock <= 10 ? 'font-semibold text-amber-600' : 'font-semibold text-emerald-700'}>
-              Stock disponible: {product.stock}
+              {t('Stock disponible', 'Available stock')}: {product.stock}
             </p>
-            {product.kind === 'service' ? <p>Duree: {product.serviceDuration ?? 'Sur devis'}</p> : null}
-            {product.kind === 'service' ? <p>Disponibilite: {product.serviceAvailability ?? 'Sur rendez-vous'}</p> : null}
+            {product.kind === 'service' ? <p>{t('Duree', 'Duration')}: {product.serviceDuration ?? t('Sur devis', 'On quote')}</p> : null}
+            {product.kind === 'service' ? <p>{t('Disponibilite', 'Availability')}: {product.serviceAvailability ?? t('Sur rendez-vous', 'By appointment')}</p> : null}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/cart" className="rounded-xl bg-dark px-5 py-3 font-semibold text-white">Commander maintenant</Link>
+            <Link href="/cart" className="rounded-xl bg-dark px-5 py-3 font-semibold text-white">{t('Commander maintenant', 'Order now')}</Link>
             <a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="rounded-xl border px-5 py-3 font-semibold">WhatsApp</a>
           </div>
         </div>
       </div>
 
       <div className="mt-12">
-        <h2 className="text-2xl font-bold">Produits similaires</h2>
+        <h2 className="text-2xl font-bold">{t('Produits similaires', 'Similar products')}</h2>
         <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {similar.map((item) => (
             <ProductCard key={item.id} product={item} />

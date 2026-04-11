@@ -102,19 +102,19 @@ export default function AdminPage() {
 
   return (
     <section className="section space-y-8 py-12">
-      <h1 className="text-3xl font-bold">Dashboard Admin</h1>
-      <p className="text-slate-600">Connecte en admin: {sessionUser.name} ({sessionUser.email})</p>
+      <h1 className="text-3xl font-bold">{t('Dashboard Admin', 'Admin Dashboard')}</h1>
+      <p className="text-slate-600">{t('Connecte en admin', 'Logged in as admin')}: {sessionUser.name} ({sessionUser.email})</p>
 
       <div className="grid gap-3 md:grid-cols-5">
-        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">Utilisateurs</p><p className="text-xl font-bold">{users.length}</p></div>
-        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">Vendeurs actifs</p><p className="text-xl font-bold">{sellers.length}</p></div>
-        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">Vendeurs badges</p><p className="text-xl font-bold">{withBadge}</p></div>
-        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">Sans badge</p><p className="text-xl font-bold">{withoutBadge}</p></div>
-        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">Visites site</p><p className="text-xl font-bold">{siteVisits}</p></div>
+        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Utilisateurs', 'Users')}</p><p className="text-xl font-bold">{users.length}</p></div>
+        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Vendeurs actifs', 'Active sellers')}</p><p className="text-xl font-bold">{sellers.length}</p></div>
+        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Vendeurs badges', 'Sellers with badge')}</p><p className="text-xl font-bold">{withBadge}</p></div>
+        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Sans badge', 'Without badge')}</p><p className="text-xl font-bold">{withoutBadge}</p></div>
+        <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Visites site', 'Site visits')}</p><p className="text-xl font-bold">{siteVisits}</p></div>
       </div>
 
       <div className="rounded-xl border bg-white p-5">
-        <h2 className="text-xl font-semibold">Analyse ventes et CA</h2>
+        <h2 className="text-xl font-semibold">{t('Analyse ventes et CA', 'Sales and revenue analysis')}</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-4">
           <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} className="rounded-lg border px-3 py-2" />
           <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} className="rounded-lg border px-3 py-2" />
@@ -133,23 +133,23 @@ export default function AdminPage() {
           </select>
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Ventes periode</p><p className="text-xl font-bold">{totalSales}</p></div>
-          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">CA periode</p><p className="text-xl font-bold">{formatPrice(totalRevenue, countryFilter || 'Cameroun')}</p></div>
-          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Plaintes</p><p className="text-xl font-bold">{complaints.length}</p></div>
+          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{t('Ventes periode', 'Sales in period')}</p><p className="text-xl font-bold">{totalSales}</p></div>
+          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{t('CA periode', 'Revenue in period')}</p><p className="text-xl font-bold">{formatPrice(totalRevenue, countryFilter || 'Cameroun')}</p></div>
+          <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{t('Plaintes', 'Complaints')}</p><p className="text-xl font-bold">{complaints.length}</p></div>
         </div>
       </div>
 
       <div className="rounded-xl border bg-white p-5">
-        <h2 className="text-xl font-semibold">Entites inscrites</h2>
+        <h2 className="text-xl font-semibold">{t('Entites inscrites', 'Registered entities')}</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b text-left text-slate-500">
-                <th className="py-2">Nom</th>
+                <th className="py-2">{t('Nom', 'Name')}</th>
                 <th className="py-2">Email</th>
-                <th className="py-2">Statut</th>
-                <th className="py-2">Pays</th>
-                <th className="py-2">Depuis</th>
+                <th className="py-2">{t('Statut', 'Status')}</th>
+                <th className="py-2">{t('Pays', 'Country')}</th>
+                <th className="py-2">{t('Depuis', 'Since')}</th>
               </tr>
             </thead>
             <tbody>
@@ -168,26 +168,26 @@ export default function AdminPage() {
       </div>
 
       <div className="rounded-xl border bg-white p-5">
-        <h2 className="text-xl font-semibold">Badge verification automatique</h2>
+        <h2 className="text-xl font-semibold">{t('Badge verification automatique', 'Automatic verification badge')}</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b text-left text-slate-500">
-                <th className="py-2">Vendeur</th>
-                <th className="py-2">Badge</th>
-                <th className="py-2">Source badge</th>
-                <th className="py-2">Commandes reussies</th>
-                <th className="py-2">Satisfaction</th>
-                <th className="py-2">Clients satisfaits</th>
-                <th className="py-2">Plaintes</th>
+                <th className="py-2">{t('Vendeur', 'Seller')}</th>
+                <th className="py-2">{t('Badge', 'Badge')}</th>
+                <th className="py-2">{t('Source badge', 'Badge source')}</th>
+                <th className="py-2">{t('Commandes reussies', 'Successful orders')}</th>
+                <th className="py-2">{t('Satisfaction', 'Satisfaction')}</th>
+                <th className="py-2">{t('Clients satisfaits', 'Satisfied clients')}</th>
+                <th className="py-2">{t('Plaintes', 'Complaints')}</th>
               </tr>
             </thead>
             <tbody>
               {sellerTrustRows.map(({ seller, trust }) => (
                 <tr key={seller.id} className="border-b">
                   <td className="py-2">{seller.company}</td>
-                  <td className="py-2">{trust.hasBadge ? (trust.badgeSource === 'admin' ? 'Verifie Min-shop (provisoire)' : 'Verifie Min-shop') : 'Sans badge'}</td>
-                  <td className="py-2">{trust.badgeSource === 'admin' ? 'Admin' : trust.badgeSource === 'performance' ? 'Performance' : '-'}</td>
+                  <td className="py-2">{trust.hasBadge ? (trust.badgeSource === 'admin' ? t('Verifie Min-shop (provisoire)', 'Min-shop Verified (provisional)') : t('Verifie Min-shop', 'Min-shop Verified')) : t('Sans badge', 'No badge')}</td>
+                  <td className="py-2">{trust.badgeSource === 'admin' ? t('Admin', 'Admin') : trust.badgeSource === 'performance' ? t('Performance', 'Performance') : '-'}</td>
                   <td className="py-2">{trust.successfulOrders}</td>
                   <td className="py-2">{trust.satisfactionRate}%</td>
                   <td className="py-2">{trust.satisfiedClients}</td>
@@ -201,28 +201,28 @@ export default function AdminPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border bg-white p-5">
-          <h2 className="text-xl font-semibold">Comptes clients</h2>
+          <h2 className="text-xl font-semibold">{t('Comptes clients', 'Client accounts')}</h2>
           <ul className="mt-3 space-y-3 text-sm">
             {clientAccounts.map((account) => (
               <li key={account.id} className="rounded-lg border p-3">
                 <p className="font-semibold">{account.name}</p>
                 <p>{account.email}</p>
                 <p>WhatsApp: {account.phone}</p>
-                <p>Localisation: {account.city}, {account.country}</p>
+                <p>{t('Localisation', 'Location')}: {account.city}, {account.country}</p>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="rounded-xl border bg-white p-5">
-          <h2 className="text-xl font-semibold">Comptes vendeurs</h2>
+          <h2 className="text-xl font-semibold">{t('Comptes vendeurs', 'Seller accounts')}</h2>
           <ul className="mt-3 space-y-3 text-sm">
             {sellerAccounts.map((account) => (
               <li key={account.id} className="rounded-lg border p-3">
                 <p className="font-semibold">{account.name}</p>
                 <p>{account.email}</p>
                 <p>WhatsApp: {account.phone}</p>
-                <p>Localisation: {account.city}, {account.country}</p>
+                <p>{t('Localisation', 'Location')}: {account.city}, {account.country}</p>
               </li>
             ))}
           </ul>
@@ -230,7 +230,7 @@ export default function AdminPage() {
       </div>
 
       <div className="rounded-xl border bg-white p-5">
-        <h2 className="text-xl font-semibold">Gestion des droits</h2>
+        <h2 className="text-xl font-semibold">{t('Gestion des droits', 'Role management')}</h2>
         <form onSubmit={onRoleChange} className="mt-3 grid gap-3 md:grid-cols-3">
           <select name="userId" className="rounded-lg border px-3 py-2">
             {users.map((user) => (
@@ -241,7 +241,7 @@ export default function AdminPage() {
             <option value="client">client</option>
             <option value="seller">seller</option>
           </select>
-          <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white">Mettre a jour le role</button>
+          <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white">{t('Mettre a jour le role', 'Update role')}</button>
         </form>
 
         <div className="mt-4 grid gap-2 md:grid-cols-2">
@@ -251,7 +251,7 @@ export default function AdminPage() {
               onClick={() => setStatus(adminDeleteUser(user.id).message)}
               className="rounded-lg border px-3 py-2 text-left text-sm hover:bg-slate-50"
             >
-              Supprimer: {user.name} ({user.role})
+              {t('Supprimer', 'Delete')}: {user.name} ({user.role})
             </button>
           ))}
         </div>
@@ -260,16 +260,16 @@ export default function AdminPage() {
       </div>
 
       <div className="rounded-xl border bg-white p-5">
-        <h2 className="text-xl font-semibold">Gestion globale des produits et services (Admin)</h2>
+        <h2 className="text-xl font-semibold">{t('Gestion globale des produits et services (Admin)', 'Global products/services management (Admin)')}</h2>
         <form onSubmit={onAddProduct} className="mt-3 grid gap-3 md:grid-cols-3">
           <select name="sellerId" className="rounded-lg border px-3 py-2">
             {sellers.map((seller) => (
               <option key={seller.id} value={seller.id}>{seller.company}</option>
             ))}
           </select>
-          <input required name="name" placeholder="Nom produit/service" className="rounded-lg border px-3 py-2" />
-          <input required name="price" type="number" min="1" placeholder="Prix" className="rounded-lg border px-3 py-2" />
-          <input required name="stock" type="number" min="0" placeholder="Stock" className="rounded-lg border px-3 py-2" />
+          <input required name="name" placeholder={t('Nom produit/service', 'Product/service name')} className="rounded-lg border px-3 py-2" />
+          <input required name="price" type="number" min="1" placeholder={t('Prix', 'Price')} className="rounded-lg border px-3 py-2" />
+          <input required name="stock" type="number" min="0" placeholder={t('Stock', 'Stock')} className="rounded-lg border px-3 py-2" />
           <select name="categorySlug" className="rounded-lg border px-3 py-2">
             <option value="energie">energie</option>
             <option value="cuisine">cuisine</option>
@@ -279,34 +279,34 @@ export default function AdminPage() {
             <option value="organisation">organisation</option>
           </select>
           <select name="kind" className="rounded-lg border px-3 py-2">
-            <option value="product">Produit</option>
+            <option value="product">{t('Produit', 'Product')}</option>
             <option value="service">Service</option>
           </select>
-          <input name="serviceDuration" placeholder="Duree service (optionnel)" className="rounded-lg border px-3 py-2" />
-          <input name="serviceAvailability" placeholder="Disponibilite service (optionnel)" className="rounded-lg border px-3 py-2" />
-          <input name="targetCountries" placeholder="Pays cibles (virgules)" className="rounded-lg border px-3 py-2 md:col-span-2" />
-          <input name="images" placeholder="URLs images (virgule)" className="rounded-lg border px-3 py-2" />
-          <textarea required name="description" placeholder="Description produit/service" className="h-20 rounded-lg border px-3 py-2 md:col-span-3" />
-          <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-3">Ajouter offre (admin)</button>
+          <input name="serviceDuration" placeholder={t('Duree service (optionnel)', 'Service duration (optional)')} className="rounded-lg border px-3 py-2" />
+          <input name="serviceAvailability" placeholder={t('Disponibilite service (optionnel)', 'Service availability (optional)')} className="rounded-lg border px-3 py-2" />
+          <input name="targetCountries" placeholder={t('Pays cibles (virgules)', 'Target countries (comma separated)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
+          <input name="images" placeholder={t('URLs images (virgule)', 'Image URLs (comma separated)')} className="rounded-lg border px-3 py-2" />
+          <textarea required name="description" placeholder={t('Description produit/service', 'Product/service description')} className="h-20 rounded-lg border px-3 py-2 md:col-span-3" />
+          <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-3">{t('Ajouter offre (admin)', 'Add offer (admin)')}</button>
         </form>
 
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b text-left text-slate-500">
-                <th className="py-2">Offre</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Vendeur</th>
-                <th className="py-2">Prix</th>
-                <th className="py-2">Stock</th>
-                <th className="py-2">Actions admin</th>
+                <th className="py-2">{t('Offre', 'Offer')}</th>
+                <th className="py-2">{t('Type', 'Type')}</th>
+                <th className="py-2">{t('Vendeur', 'Seller')}</th>
+                <th className="py-2">{t('Prix', 'Price')}</th>
+                <th className="py-2">{t('Stock', 'Stock')}</th>
+                <th className="py-2">{t('Actions admin', 'Admin actions')}</th>
               </tr>
             </thead>
             <tbody>
               {products.slice(0, 30).map((product) => (
                 <tr key={product.id} className="border-b">
                   <td className="py-2">{product.name}</td>
-                  <td className="py-2">{product.kind === 'service' ? 'Service' : 'Produit'}</td>
+                  <td className="py-2">{product.kind === 'service' ? t('Service', 'Service') : t('Produit', 'Product')}</td>
                   <td className="py-2">{product.companyName}</td>
                   <td className="py-2">{formatPrice(product.price)}</td>
                   <td className="py-2">{product.stock}</td>
@@ -315,7 +315,7 @@ export default function AdminPage() {
                       <button onClick={() => setStatus(adminUpdateProduct(product.id, { stock: product.stock + 1 }).message)} className="rounded border px-2 py-1 text-xs">+ stock</button>
                       <button onClick={() => setStatus(adminUpdateProduct(product.id, { stock: Math.max(0, product.stock - 1) }).message)} className="rounded border px-2 py-1 text-xs">- stock</button>
                       <button onClick={() => setStatus(adminUpdateProduct(product.id, { price: product.price + 500 }).message)} className="rounded border px-2 py-1 text-xs">+ prix</button>
-                      <button onClick={() => setStatus(adminDeleteProduct(product.id).message)} className="rounded border px-2 py-1 text-xs text-red-600">Supprimer</button>
+                      <button onClick={() => setStatus(adminDeleteProduct(product.id).message)} className="rounded border px-2 py-1 text-xs text-red-600">{t('Supprimer', 'Delete')}</button>
                     </div>
                   </td>
                 </tr>

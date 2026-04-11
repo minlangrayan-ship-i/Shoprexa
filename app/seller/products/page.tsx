@@ -6,7 +6,7 @@ import { useSite } from '@/components/site-context';
 import { formatPrice } from '@/lib/utils';
 
 export default function SellerProductsPage() {
-  const { sessionUser, products, addSellerProduct, updateSellerProduct, deleteSellerProduct } = useSite();
+  const { sessionUser, products, addSellerProduct, updateSellerProduct, deleteSellerProduct, t } = useSite();
   const [status, setStatus] = useState('');
 
   const sellerProducts = products.filter((product) => product.sellerId === sessionUser?.sellerId);
@@ -44,17 +44,17 @@ export default function SellerProductsPage() {
   return (
     <SellerLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Gestion des produits</h1>
+        <h1 className="text-3xl font-bold">{t('Gestion des produits', 'Product management')}</h1>
 
         <form onSubmit={onSubmit} className="rounded-xl border bg-white p-4">
-          <h2 className="font-semibold">Ajouter un produit</h2>
+          <h2 className="font-semibold">{t('Ajouter une offre', 'Add an offer')}</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <input required name="name" placeholder="Nom produit" className="rounded-lg border px-3 py-2" />
-            <input required name="price" type="number" min="1" placeholder="Prix" className="rounded-lg border px-3 py-2" />
-            <input required name="stock" type="number" min="0" placeholder="Stock" className="rounded-lg border px-3 py-2" />
+            <input required name="name" placeholder={t('Nom produit/service', 'Product/service name')} className="rounded-lg border px-3 py-2" />
+            <input required name="price" type="number" min="1" placeholder={t('Prix', 'Price')} className="rounded-lg border px-3 py-2" />
+            <input required name="stock" type="number" min="0" placeholder={t('Stock', 'Stock')} className="rounded-lg border px-3 py-2" />
             <select name="kind" className="rounded-lg border px-3 py-2">
-              <option value="product">Produit</option>
-              <option value="service">Service</option>
+              <option value="product">{t('Produit', 'Product')}</option>
+              <option value="service">{t('Service', 'Service')}</option>
             </select>
             <select name="categorySlug" className="rounded-lg border px-3 py-2">
               <option value="energie">Energie</option>
@@ -64,29 +64,29 @@ export default function SellerProductsPage() {
               <option value="fitness">Fitness</option>
               <option value="organisation">Organisation</option>
             </select>
-            <input name="serviceDuration" placeholder="Duree service (optionnel)" className="rounded-lg border px-3 py-2 md:col-span-2" />
-            <input name="serviceAvailability" placeholder="Disponibilite service (optionnel)" className="rounded-lg border px-3 py-2 md:col-span-2" />
-            <textarea required name="description" placeholder="Description" className="h-24 rounded-lg border px-3 py-2 md:col-span-2" />
-            <input name="images" placeholder="URLs images (separees par virgule)" className="rounded-lg border px-3 py-2 md:col-span-2" />
-            <input name="targetCountries" placeholder="Pays cibles (virgules)" className="rounded-lg border px-3 py-2 md:col-span-2" />
-            <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-2">Ajouter le produit</button>
+            <input name="serviceDuration" placeholder={t('Duree service (optionnel)', 'Service duration (optional)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <input name="serviceAvailability" placeholder={t('Disponibilite service (optionnel)', 'Service availability (optional)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <textarea required name="description" placeholder={t('Description', 'Description')} className="h-24 rounded-lg border px-3 py-2 md:col-span-2" />
+            <input name="images" placeholder={t('URLs images (separees par virgule)', 'Image URLs (comma separated)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <input name="targetCountries" placeholder={t('Pays cibles (virgules)', 'Target countries (comma separated)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
+            <button className="rounded-lg bg-dark px-4 py-2 font-semibold text-white md:col-span-2">{t('Ajouter l offre', 'Add offer')}</button>
             {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
           </div>
         </form>
 
         <div className="rounded-xl border bg-white p-4">
-          <h2 className="font-semibold">Mes produits</h2>
+          <h2 className="font-semibold">{t('Mes offres', 'My offers')}</h2>
           <div className="mt-3 space-y-3">
             {sellerProducts.map((product) => (
               <div key={product.id} className="rounded-lg border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{product.name}</p>
-                    <p className="text-xs text-slate-500">{product.kind === 'service' ? 'Service' : 'Produit'} - {formatPrice(product.price)} - Stock {product.stock}</p>
+                    <p className="text-xs text-slate-500">{product.kind === 'service' ? t('Service', 'Service') : t('Produit', 'Product')} - {formatPrice(product.price)} - {t('Stock', 'Stock')} {product.stock}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => updateSellerProduct(product.id, { stock: product.stock + 1 })} className="rounded border px-3 py-1 text-xs">+ Stock</button>
-                    <button onClick={() => deleteSellerProduct(product.id)} className="rounded border px-3 py-1 text-xs text-red-600">Supprimer</button>
+                    <button onClick={() => updateSellerProduct(product.id, { stock: product.stock + 1 })} className="rounded border px-3 py-1 text-xs">+ {t('Stock', 'Stock')}</button>
+                    <button onClick={() => deleteSellerProduct(product.id)} className="rounded border px-3 py-1 text-xs text-red-600">{t('Supprimer', 'Delete')}</button>
                   </div>
                 </div>
               </div>
