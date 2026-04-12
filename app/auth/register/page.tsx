@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { africaCountries, countryPhonePrefixes, marketplaceCategories } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
+function toServerRole(role: 'client' | 'seller' | 'admin') {
+  if (role === 'admin') return 'ADMIN';
+  if (role === 'seller') return 'SELLER';
+  return 'CUSTOMER';
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register, t } = useSite();
@@ -16,7 +22,7 @@ export default function RegisterPage() {
 
   const cities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
@@ -35,9 +41,30 @@ export default function RegisterPage() {
 
     const result = register(payload);
     setStatus(result.message);
-    setLoading(false);
 
-    if (!result.ok || !result.user) return;
+    if (!result.ok || !result.user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await fetch('/api/auth/dev-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: toServerRole(result.user.role),
+          sellerId: result.user.sellerId ?? null
+        })
+      });
+    } catch {
+      // Keep the registration flow usable even if the development cookie sync fails.
+    }
+
+    setLoading(false);
     if (result.user.role === 'seller') router.push('/seller/dashboard');
     else if (result.user.role === 'admin') router.push('/admin');
     else router.push('/client/home');
@@ -48,7 +75,7 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-2xl rounded-2xl border bg-white p-7 shadow-sm">
         <h1 className="text-3xl font-bold">{t('Inscription ouverte', 'Open registration')}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {t('Création de compte rapide et rassurante. Connexion Google/téléphone pourra être ajoutée ensuite.', 'Fast and trusted account creation. Google/phone login can be added later.')}
+          {t('Création de compte rapide et rassurante. La connexion Google ou téléphone pourra être ajoutée ensuite.', 'Fast and trusted account creation. Google or phone login can be added later.')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
@@ -74,16 +101,10 @@ export default function RegisterPage() {
               <option value="company">Entreprise (produits/services)</option>
             </select>
           ) : (
-            <input value="client standard" disabled className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-500" />
+            <input value="Client standard" disabled className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-500" />
           )}
 
-          <select
-            required
-            name="country"
-            value={country}
-            onChange={(event) => setCountry(event.target.value)}
-            className="rounded-xl border px-3 py-2"
-          >
+          <select required name="country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded-xl border px-3 py-2">
             {africaCountries.map((entry) => (
               <option key={entry.country} value={entry.country}>{entry.country}</option>
             ))}

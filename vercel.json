@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "regions": ["cdg1"],
+  "functions": {
+    "app/api/**": {
+      "maxDuration": 30
+    }
+  }
+}

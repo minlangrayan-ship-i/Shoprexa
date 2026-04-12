@@ -57,7 +57,7 @@ export default function ClientHomePage() {
       <section className="section py-12">
         <div className="card p-6">
           <h1 className="text-2xl font-bold">{t('Espace client', 'Client area')}</h1>
-          <p className="mt-2 text-slate-600">{t('Connecte-toi avec un compte client pour voir ta homepage personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
+          <p className="mt-2 text-slate-600">{t('Connecte-toi avec un compte client pour voir ta page d accueil personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
           <Link href="/auth/login" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 text-white">{t('Aller à la connexion', 'Go to login')}</Link>
         </div>
       </section>
@@ -83,7 +83,7 @@ export default function ClientHomePage() {
         <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{preferenceProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         <p className="mt-3 text-xs text-slate-500">
           {t(
-            'Suggestion anonyme: des clients au profil proche du vôtre ont aussi acheté des produits Énergie et Sécurité cette semaine.',
+            'Suggestion anonyme : des clients au profil proche du vôtre ont aussi acheté des produits Énergie et Sécurité cette semaine.',
             'Anonymous hint: customers with a similar profile also bought Energy and Security products this week.'
           )}
         </p>

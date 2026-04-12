@@ -83,7 +83,6 @@ export default function SellersPage() {
     }
 
     const formData = new FormData(event.currentTarget);
-
     const sellerId = String(formData.get('sellerId'));
     const customerName = String(formData.get('customerName'));
     const rating = Number(formData.get('rating'));
@@ -158,7 +157,7 @@ export default function SellersPage() {
                 </span>
               </div>
               {trust.hasBadge ? (
-                <p className="mt-2 text-xs font-semibold text-emerald-700">✔ {t('Badge Vérifié Min-shop visible dans le classement', 'Min-shop Verified badge visible in ranking')}</p>
+                <p className="mt-2 text-xs font-semibold text-emerald-700">{t('Badge Vérifié Min-shop visible dans le classement', 'Min-shop Verified badge visible in ranking')}</p>
               ) : null}
 
               <p className="mt-2 text-sm text-slate-600">{seller.name}</p>

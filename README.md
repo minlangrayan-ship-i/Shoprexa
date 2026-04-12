@@ -1,94 +1,72 @@
 # Min-shop
 
-Min-shop est une plateforme e-commerce moderne conçue pour le Cameroun et le marché africain. Le projet est construit avec **Next.js + TypeScript + Tailwind + Prisma + PostgreSQL** et inclut une base admin, un catalogue dynamique, un panier, un checkout simulé, des formulaires fonctionnels et une architecture prête pour Flutterwave/Paystack.
+Min-shop is a marketplace web app built with Next.js, TypeScript, Tailwind, Prisma, and PostgreSQL.
 
 ## Stack
 
 - Next.js (App Router)
-- React + TypeScript
+- TypeScript
 - Tailwind CSS
 - Prisma ORM
 - PostgreSQL
-- API routes Next.js (backend Node.js)
 
-## Fonctionnalités incluses
+## Quick Start
 
-- Page d’accueil orientée conversion (hero, catégories, produits vedette, témoignages, FAQ)
-- Catalogue dynamique (recherche, filtres, tri, pagination)
-- Détail produit avec CTA commande et WhatsApp
-- Pages À propos, Contact, Vendeurs
-- Panier dynamique (localStorage)
-- Checkout avec simulation paiement et enregistrement en base
-- Auth démo (inscription/connexion)
-- Dashboard admin simple (produits CRUD, commandes, messages, demandes vendeurs)
-- Seed de données réalistes (catégories, 11 produits, compte admin)
-
-## Démarrage local
-
-### 1) Prérequis
-
-- Node.js 20+
-- PostgreSQL 14+
-
-### 2) Installation
+1. Install dependencies:
 
 ```bash
 npm install
 cp .env.example .env
 ```
 
-### 3) Configurer la base
+2. Generate Prisma client and run migrations:
 
 ```bash
 npm run prisma:generate
-npx prisma migrate dev --name init
+npx prisma migrate dev
+```
+
+3. Seed optional data:
+
+```bash
 npm run prisma:seed
 ```
 
-### 4) Lancer le projet
+4. Run locally:
 
 ```bash
 npm run dev
 ```
 
-Accès: `http://localhost:3000`
+App URL: `http://localhost:3000`
 
-## Admin de démonstration
+## Production Readiness
 
-- URL: `http://localhost:3000/admin`
-- Email: `admin@min-shop.africa`
-- Mot de passe: `Admin@1234`
+For Vercel + managed PostgreSQL + hosted payments (Flutterwave/CinetPay), see:
 
-## Routes principales
+- [README_PRODUCTION.md](./README_PRODUCTION.md)
 
-- `/` Accueil
-- `/shop` Catalogue
-- `/product/[slug]` Détail produit
-- `/cart` Panier
-- `/checkout` Checkout
-- `/about` À propos
-- `/contact` Contact
-- `/sellers` Devenir vendeur
-- `/auth/login`, `/auth/register`
-- `/admin` Dashboard admin
+Main payment routes:
 
-## Structure
+- `POST /api/payments/create-payment`
+- `POST /api/payments/payment-webhook`
+- `GET /payment-return`
 
-- `app/` pages + API routes
-- `components/` composants UI réutilisables
-- `lib/` utilitaires (prisma, prix, types, paiement)
-- `prisma/` schéma + seed
+## Roles
 
-## Préparation intégrations
+- `ADMIN`
+- `SELLER`
+- `CUSTOMER`
 
-- Paiements: structure de provider (`MOCK`, `FLUTTERWAVE`, `PAYSTACK`) et endpoints de commande prêts à connecter.
-- WhatsApp: CTA global configurable via `NEXT_PUBLIC_WHATSAPP_NUMBER`.
-- Email/analytics: architecture API prête à étendre.
+Route protections:
 
-## Prochaines améliorations
+- `/admin/*` requires admin session
+- `/seller/*` requires seller or admin session
+- Admin and seller APIs are protected server-side with role checks
 
-1. Ajouter authentification sécurisée (NextAuth/Auth.js + sessions JWT).
-2. Appliquer RBAC serveur pour protéger `/admin`.
-3. Ajouter upload média (Cloudinary/S3) pour produits.
-4. Intégrer paiement réel Flutterwave/Paystack webhooks.
-5. Ajouter tests E2E (Playwright) et monitoring.
+## Legal Pages
+
+- `/cgu`
+- `/privacy`
+- `/refunds`
+- `/seller-terms`

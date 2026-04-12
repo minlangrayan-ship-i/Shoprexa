@@ -13,6 +13,12 @@ enum UserRole {
   SELLER
 }
 
+enum SellerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -25,7 +31,15 @@ enum OrderStatus {
 enum PaymentProvider {
   MOCK
   FLUTTERWAVE
+  CINETPAY
   PAYSTACK
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
 }
 
 model User {
@@ -33,10 +47,28 @@ model User {
   name         String
   email        String    @unique
   passwordHash String
+  phone        String?
   role         UserRole  @default(CUSTOMER)
+  seller       Seller?
+  carts        Cart[]
   orders       Order[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model Seller {
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName    String
+  country        String?
+  city           String?
+  status         SellerStatus @default(PENDING)
+  commissionRate Decimal      @default(0) @db.Decimal(5, 2)
+  products       Product[]
+  commissions    Commission[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Category {
@@ -49,47 +81,113 @@ model Category {
 }
 
 model Product {
-  id           String    @id @default(cuid())
-  name         String
-  slug         String    @unique
-  description  String
-  price        Decimal   @db.Decimal(10, 2)
-  oldPrice     Decimal?  @db.Decimal(10, 2)
-  stock        Int       @default(0)
-  featured     Boolean   @default(false)
-  images       String[]
-  specs        Json?
-  categoryId   String
-  category     Category  @relation(fields: [categoryId], references: [id])
-  orderItems   OrderItem[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String
+  price       Decimal     @db.Decimal(10, 2)
+  oldPrice    Decimal?    @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  featured    Boolean     @default(false)
+  images      String[]
+  specs       Json?
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  sellerId    String?
+  seller      Seller?     @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
 }
 
 model Order {
-  id              String          @id @default(cuid())
-  userId           String?
-  user             User?           @relation(fields: [userId], references: [id])
-  customerName     String
-  customerEmail    String
-  customerPhone    String
-  shippingAddress  String
-  paymentProvider  PaymentProvider @default(MOCK)
-  status           OrderStatus     @default(PENDING)
-  total            Decimal         @db.Decimal(10, 2)
-  items            OrderItem[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  reference      String          @unique
+  userId         String?
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName   String
+  customerEmail  String
+  customerPhone  String
+  shippingAddress String
+  currency       String          @default("XAF")
+  paymentProvider PaymentProvider @default(MOCK)
+  status         OrderStatus     @default(PENDING)
+  total          Decimal         @db.Decimal(10, 2)
+  paidAt         DateTime?
+  items          OrderItem[]
+  payments       Payment[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitPrice  Decimal     @db.Decimal(10, 2)
+  commission Commission?
+}
+
+model Payment {
+  id                    String         @id @default(cuid())
+  orderId               String
+  order                 Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider              PaymentProvider
+  status                PaymentStatus  @default(PENDING)
+  amount                Decimal        @db.Decimal(10, 2)
+  currency              String         @default("XAF")
+  externalReference     String         @unique
+  providerReference     String?
+  providerTransactionId String?
+  verifiedAt            DateTime?
+  rawRequest            Json?
+  rawResponse           Json?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  @@unique([provider, providerReference])
+  @@unique([provider, providerTransactionId])
+}
+
+model Commission {
+  id         String    @id @default(cuid())
+  orderItemId String   @unique
+  orderItem  OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  sellerId   String?
+  seller     Seller?   @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  rate       Decimal   @db.Decimal(5, 2)
+  amount     Decimal   @db.Decimal(10, 2)
+  status     String    @default("PENDING")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model ContactMessage {

@@ -1,16 +1,23 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSite } from '@/components/site-context';
+
+function toServerRole(role: 'client' | 'seller' | 'admin') {
+  if (role === 'admin') return 'ADMIN';
+  if (role === 'seller') return 'SELLER';
+  return 'CUSTOMER';
+}
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, t } = useSite();
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
@@ -20,9 +27,36 @@ export default function LoginPage() {
 
     const result = login(email, password);
     setStatus(result.message);
+
+    if (!result.ok || !result.user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await fetch('/api/auth/dev-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: toServerRole(result.user.role),
+          sellerId: result.user.sellerId ?? null
+        })
+      });
+    } catch {
+      // The UI stays usable even if the development cookie sync fails.
+    }
+
+    const next = searchParams.get('next');
     setLoading(false);
 
-    if (!result.ok || !result.user) return;
+    if (next) {
+      router.push(next);
+      return;
+    }
 
     if (result.user.role === 'client') router.push('/client/home');
     if (result.user.role === 'seller') router.push('/seller/dashboard');

@@ -1,12 +1,12 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { CartItem } from '@/lib/types';
 import { estimateDelivery, formatPrice } from '@/lib/utils';
 import { paymentProviders } from '@/lib/payment';
 import { useSite } from '@/components/site-context';
 import { africaCountries } from '@/lib/mock-marketplace';
-import Link from 'next/link';
 
 export default function CheckoutPage() {
   const { country, city, products, sessionUser, recordClientOrder, t } = useSite();
@@ -62,18 +62,50 @@ export default function CheckoutPage() {
       setStatus(t('Commande réservée aux comptes clients.', 'Ordering is reserved for client accounts.'));
       return;
     }
+
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-    const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, items }) });
-    if (res.ok) {
+    const orderRes = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, currency: 'XAF', items })
+    });
+    if (!orderRes.ok) {
+      setStatus(t('Échec de la commande.', 'Order failed.'));
+      return;
+    }
+
+    const orderPayload = (await orderRes.json()) as {
+      id: string;
+      paymentProvider: 'MOCK' | 'FLUTTERWAVE' | 'CINETPAY' | 'PAYSTACK';
+    };
+
+    const paymentRes = await fetch('/api/payments/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: orderPayload.id, provider: orderPayload.paymentProvider })
+    });
+    if (!paymentRes.ok) {
+      setStatus(t('Commande créée mais paiement indisponible.', 'Order created but payment is unavailable.'));
+      return;
+    }
+
+    const paymentPayload = (await paymentRes.json()) as { checkoutUrl?: string | null; alreadyPaid?: boolean };
+    if (paymentPayload.alreadyPaid) {
       recordClientOrder(items);
       localStorage.removeItem('min-shop-cart');
       window.dispatchEvent(new Event('cart:update'));
-      setStatus(t('Commande enregistrée. Paiement simulé avec succès.', 'Order recorded. Simulated payment completed.'));
+      setStatus(t('Commande payée et confirmée.', 'Order paid and confirmed.'));
       setItems([]);
       e.currentTarget.reset();
-    } else {
-      setStatus(t('Échec de la commande.', 'Order failed.'));
+      return;
     }
+
+    if (paymentPayload.checkoutUrl) {
+      window.location.href = paymentPayload.checkoutUrl;
+      return;
+    }
+
+    setStatus(t('Lien de paiement introuvable.', 'Payment link is missing.'));
   };
 
   return (
@@ -81,7 +113,7 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold">{t('Paiement', 'Checkout')}</h1>
       {!sessionUser || sessionUser.role !== 'client' ? (
         <div className="mt-4 rounded-xl border bg-amber-50 p-4 text-sm text-amber-700">
-          <p>{t('Accès checkout réservé aux clients connectés.', 'Checkout access is restricted to logged-in client accounts.')}</p>
+          <p>{t('Accès au paiement réservé aux clients connectés.', 'Checkout access is restricted to logged-in client accounts.')}</p>
           <Link href="/auth/login" className="mt-2 inline-block rounded-lg border border-amber-400 px-3 py-1 font-semibold">
             {t('Se connecter', 'Login')}
           </Link>
@@ -112,7 +144,7 @@ export default function CheckoutPage() {
             <p>{t('Moyen de transport', 'Transport mode')}: <span className="font-semibold">{shipping.transport}</span></p>
             <p>{t('Délai estimé', 'Estimated delay')}: <span className="font-semibold">{shipping.delay}</span></p>
             <p>{t('Date estimée de livraison', 'Estimated delivery date')}: <span className="font-semibold">{etaDate}</span></p>
-            <p>{t('Coût livraison', 'Delivery cost')}: <span className="font-semibold">{formatPrice(shipping.deliveryCost, clientCountry)}</span></p>
+            <p>{t('Coût de livraison', 'Delivery cost')}: <span className="font-semibold">{formatPrice(shipping.deliveryCost, clientCountry)}</span></p>
           </div>
 
           <button disabled={!sessionUser || sessionUser.role !== 'client'} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{t('Valider la commande', 'Confirm order')}</button>
@@ -120,7 +152,7 @@ export default function CheckoutPage() {
         </form>
 
         <aside className="card h-fit p-5">
-          <h2 className="font-semibold">{t('Résumé commande', 'Order summary')}</h2>
+          <h2 className="font-semibold">{t('Résumé de commande', 'Order summary')}</h2>
           <div className="mt-3 space-y-2 text-sm">{items.map((i) => <p key={i.id}>{i.name} x{i.quantity}</p>)}</div>
           <p className="mt-3 text-sm">{t('Sous-total', 'Subtotal')}: {formatPrice(total, clientCountry)}</p>
           <p className="text-sm">{t('Livraison', 'Shipping')}: {formatPrice(shipping.deliveryCost, clientCountry)}</p>

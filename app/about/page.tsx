@@ -10,14 +10,14 @@ export default function AboutPage() {
       <h1 className="text-3xl font-bold">{t('À propos de Min-shop', 'About Min-shop')}</h1>
       <p className="mt-2 max-w-3xl text-slate-600">
         {t(
-          'Min-shop construit une marketplace africaine de confiance: vendeurs classés, livraison prévisible et accompagnement transparent.',
+          'Min-shop construit une marketplace africaine de confiance : vendeurs classés, livraison prévisible et accompagnement transparent.',
           'Min-shop builds a trusted African marketplace: ranked sellers, predictable delivery, and transparent guidance.'
         )}
       </p>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <article className="card p-6">
-          <h2 className="text-xl font-semibold">{t('Dropshipper: définition simple', 'Dropshipper: simple definition')}</h2>
+          <h2 className="text-xl font-semibold">{t('Dropshipper : définition simple', 'Dropshipper: simple definition')}</h2>
           <p className="mt-2 text-slate-600">
             {t(
               'Un dropshipper vend les produits d une entreprise sans stock initial local. Il active un catalogue et coordonne la vente.',
@@ -27,7 +27,7 @@ export default function AboutPage() {
         </article>
 
         <article className="card p-6">
-          <h2 className="text-xl font-semibold">{t('Dropshipping: comment ça marche', 'Dropshipping: how it works')}</h2>
+          <h2 className="text-xl font-semibold">{t('Dropshipping : comment ça marche', 'Dropshipping: how it works')}</h2>
           <p className="mt-2 text-slate-600">
             {t(
               'Le client commande, le fournisseur prépare, puis la livraison est suivie avec délai estimé, mode de transport et coût.',

@@ -6,13 +6,7 @@ import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
 export default function DropshippersPage() {
-  const {
-    country,
-    sessionUser,
-    dropshipperCatalogProposals,
-    proposeDropshipperCatalog,
-    t
-  } = useSite();
+  const { country, sessionUser, dropshipperCatalogProposals, proposeDropshipperCatalog, t } = useSite();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [zone, setZone] = useState<'all' | 'country'>('all');
   const [status, setStatus] = useState('');
@@ -35,10 +29,10 @@ export default function DropshippersPage() {
     return (
       <section className="section py-12">
         <div className="card p-6">
-          <h1 className="text-2xl font-bold">{t('Acces reserve', 'Restricted access')}</h1>
+          <h1 className="text-2xl font-bold">{t('Accès réservé', 'Restricted access')}</h1>
           <p className="mt-2 text-sm text-slate-600">
             {t(
-              'Cet onglet est reserve aux comptes dropshipper et a l admin.',
+              'Cet onglet est réservé aux comptes dropshipper et à l admin.',
               'This tab is restricted to dropshipper accounts and admin.'
             )}
           </p>
@@ -109,16 +103,16 @@ export default function DropshippersPage() {
 
       {sessionUser?.role === 'admin' ? (
         <div className="mt-8 rounded-xl border bg-white p-5">
-          <h2 className="text-lg font-bold">{t('Vue ensemble admin', 'Admin overview')}</h2>
+          <h2 className="text-lg font-bold">{t('Vue d ensemble admin', 'Admin overview')}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            {dropshipperCatalogProposals.length} {t('proposition(s) de catalogue enregistree(s).', 'catalog proposal(s) recorded.')}
+            {dropshipperCatalogProposals.length} {t('proposition(s) de catalogue enregistrée(s).', 'catalog proposal(s) recorded.')}
           </p>
           <div className="mt-3 space-y-2 text-sm">
             {dropshipperCatalogProposals.slice(0, 8).map((proposal) => (
               <div key={proposal.id} className="rounded-lg border p-3">
                 <p className="font-semibold">{proposal.dropshipperName}</p>
                 <p className="text-slate-600">
-                  {proposal.productIds.length} {t('produit(s) propose(s)', 'product(s) proposed')} - {proposal.createdAt}
+                  {proposal.productIds.length} {t('produit(s) proposé(s)', 'product(s) proposed')} - {proposal.createdAt}
                 </p>
               </div>
             ))}

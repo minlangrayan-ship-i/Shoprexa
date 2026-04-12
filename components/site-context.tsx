@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
@@ -236,6 +236,97 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function syncServerSession() {
+      try {
+        // Reconcile the UI session with the signed cookie so protected pages survive reloads.
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as {
+          user: {
+            id: string;
+            name: string;
+            email: string;
+            role: 'ADMIN' | 'CUSTOMER' | 'SELLER';
+            sellerId?: string | null;
+          } | null;
+        };
+
+        if (cancelled) return;
+
+        if (!payload.user && sessionUser) {
+          await fetch('/api/auth/dev-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              userId: sessionUser.id,
+              name: sessionUser.name,
+              email: sessionUser.email,
+              role:
+                sessionUser.role === 'admin'
+                  ? 'ADMIN'
+                  : sessionUser.role === 'seller'
+                    ? 'SELLER'
+                    : 'CUSTOMER',
+              sellerId: sessionUser.sellerId ?? null
+            })
+          });
+          return;
+        }
+
+        if (!payload.user) return;
+        const serverUser = payload.user;
+
+        const matchingUser =
+          users.find((entry) => entry.id === serverUser.id) ??
+          users.find((entry) => entry.email.toLowerCase() === serverUser.email.toLowerCase());
+
+        if (matchingUser) {
+          const nextSession = mapSession(matchingUser);
+          setSessionUser((current) => (current?.id === nextSession.id ? current : nextSession));
+          setCountryState(matchingUser.country);
+          setCityState(matchingUser.city);
+          return;
+        }
+
+        setSessionUser((current) =>
+          current ??
+          ({
+            id: serverUser.id,
+            name: serverUser.name,
+            email: serverUser.email,
+            role:
+              serverUser.role === 'ADMIN'
+                ? 'admin'
+                : serverUser.role === 'SELLER'
+                  ? 'seller'
+                  : 'client',
+            country,
+            city,
+            phone: '',
+            avatar: defaultAvatar,
+            sellerId: serverUser.sellerId ?? undefined,
+            sellerType: undefined,
+            createdAt: new Date().toISOString().slice(0, 10),
+            preferences: []
+          }) satisfies SessionUser
+        );
+      } catch {
+        // Ignore session sync failures and keep the local app usable.
+      }
+    }
+
+    void syncServerSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [city, country, sessionUser, users]);
+
+  useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -320,7 +411,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (!payload.phone.startsWith(expectedPrefix)) {
       return {
         ok: false,
-        message: t(`Le numero doit commencer par ${expectedPrefix}.`, `Phone number must start with ${expectedPrefix}.`)
+        message: t(`Le numéro doit commencer par ${expectedPrefix}.`, `Phone number must start with ${expectedPrefix}.`)
       };
     }
 
@@ -382,7 +473,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     return { ok: true, message: t('Compte créé avec succès.', 'Account created successfully.'), user: session };
   };
 
-  const logout = () => setSessionUser(null);
+  const logout = () => {
+    setSessionUser(null);
+    void fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  };
 
   const updateProfile = (payload: ProfileUpdatePayload) => {
     if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
@@ -519,7 +613,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       setAdminNotifications((current) => [
         {
           id: `notif-${Date.now()}-${item.id}`,
-          message: `Transaction validee: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name})`,
+          message: `Transaction validée: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name})`,
           createdAt
         },
         ...current
@@ -798,7 +892,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       return {
         ok: false,
         message: t(
-          'Action reservee a l admin et aux comptes dropshipper.',
+          'Action réservée à l admin et aux comptes dropshipper.',
           'Only admin and dropshipper accounts can do this action.'
         )
       };
@@ -823,7 +917,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     setAdminNotifications((current) => [
       {
         id: `notif-drop-${Date.now()}`,
-        message: `Catalogue dropshipper propose: ${payload.dropshipperName} (${payload.productIds.length} produit(s))`,
+        message: `Catalogue dropshipper proposé: ${payload.dropshipperName} (${payload.productIds.length} produit(s))`,
         createdAt
       },
       ...current
@@ -831,7 +925,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
     return {
       ok: true,
-      message: t('Catalogue propose aux vendeurs avec succes.', 'Catalog successfully proposed to vendors.')
+      message: t('Catalogue proposé aux vendeurs avec succès.', 'Catalog successfully proposed to vendors.')
     };
   };
 
@@ -928,3 +1022,5 @@ export function useSite() {
   if (!context) throw new Error('useSite must be used within SiteProvider');
   return context;
 }
+
+

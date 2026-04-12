@@ -21,6 +21,7 @@ export function Footer() {
             )}
           </p>
         </div>
+
         <div>
           <h4 className="font-semibold text-white">{t('Plateforme', 'Platform')}</h4>
           <ul className="mt-3 space-y-2 text-sm">
@@ -29,14 +30,20 @@ export function Footer() {
             {canAccessDropshipperTab ? <li><Link href="/dropshippers">Dropshippers</Link></li> : null}
           </ul>
         </div>
+
         <div>
           <h4 className="font-semibold text-white">{t('Entreprise', 'Company')}</h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li><Link href="/about">{t('À propos', 'About')}</Link></li>
             <li><Link href="/contact">Contact</Link></li>
             <li><Link href="/auth/login">{t('Connexion', 'Login')}</Link></li>
+            <li><Link href="/cgu">CGU</Link></li>
+            <li><Link href="/privacy">{t('Confidentialité', 'Privacy')}</Link></li>
+            <li><Link href="/refunds">{t('Remboursements', 'Refunds')}</Link></li>
+            <li><Link href="/seller-terms">{t('Conditions vendeurs', 'Seller terms')}</Link></li>
           </ul>
         </div>
+
         <div>
           <h4 className="font-semibold text-white">Support</h4>
           <ul className="mt-3 space-y-2 text-sm">
@@ -46,7 +53,9 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <p className="border-t border-white/10 py-4 text-center text-xs">{new Date().getFullYear()} Min-shop. {t('Tous droits réservés.', 'All rights reserved.')}</p>
+      <p className="border-t border-white/10 py-4 text-center text-xs">
+        {new Date().getFullYear()} Min-shop. {t('Tous droits réservés.', 'All rights reserved.')}
+      </p>
     </footer>
   );
 }
