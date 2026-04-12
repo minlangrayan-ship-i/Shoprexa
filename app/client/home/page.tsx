@@ -57,7 +57,7 @@ export default function ClientHomePage() {
       <section className="section py-12">
         <div className="card p-6">
           <h1 className="text-2xl font-bold">{t('Espace client', 'Client area')}</h1>
-          <p className="mt-2 text-slate-600">{t('Connecte-toi avec un compte client pour voir ta page d accueil personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
+          <p className="mt-2 text-slate-600">{t('Connectez-vous avec un compte client pour voir votre page d accueil personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
           <Link href="/auth/login" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 text-white">{t('Aller à la connexion', 'Go to login')}</Link>
         </div>
       </section>
@@ -68,8 +68,8 @@ export default function ClientHomePage() {
     <section className="section py-12">
       <div className="card bg-gradient-to-r from-brand-600 to-dark p-6 text-white">
         <p className="text-sm uppercase opacity-80">{t('Homepage personnalisée', 'Personalized homepage')}</p>
-        <h1 className="mt-2 text-3xl font-bold">{t('Bonjour', 'Hello')} {sessionUser.name}</h1>
-        <p className="mt-2 text-sm opacity-90">{t('Nous te montrons les meilleurs produits pour', 'We are showing the best products for')} {city}, {country}.</p>
+        <h1 className="mt-2 text-3xl font-bold">{t('Bienvenue', 'Welcome')} {sessionUser.name}</h1>
+        <p className="mt-2 text-sm opacity-90">{t('Nous vous présentons les meilleurs produits pour', 'We are showing you the best products for')} {city}, {country}.</p>
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
