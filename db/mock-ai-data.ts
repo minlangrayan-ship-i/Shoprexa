@@ -1,0 +1,42 @@
+﻿export const faqKnowledge = {
+  delivery: [
+    'Les delais dependent de la ville, du stock et du transport estime.',
+    'Meme ville: livraison rapide en moto. Inter-ville: voiture/camion. International: avion.'
+  ],
+  payment: [
+    'Min-shop accepte les moyens locaux (mobile money) et les cartes selon le pays.',
+    'Le paiement est confirme avant l expedition pour limiter les annulations.'
+  ],
+  returns: [
+    'Les retours sont possibles selon la politique du vendeur et le type d article.',
+    'Les produits endommages ou non conformes peuvent etre signales rapidement via support.'
+  ]
+};
+
+export const complementaryCategoryMap: Record<string, string[]> = {
+  energie: ['securite', 'mobilite'],
+  cuisine: ['organisation', 'energie'],
+  securite: ['energie', 'organisation'],
+  mobilite: ['fitness', 'energie'],
+  fitness: ['mobilite', 'organisation'],
+  organisation: ['cuisine', 'securite']
+};
+
+export const categoryKeywords: Record<string, string[]> = {
+  energie: ['solaire', 'power', 'batterie', 'charge', 'lampe', 'energie'],
+  cuisine: ['mixeur', 'friteuse', 'cuisine', 'cuisson', 'ustensile', 'gaz'],
+  securite: ['alarme', 'camera', 'serrure', 'securite', 'coffre', 'protection'],
+  mobilite: ['scooter', 'trottinette', 'velo', 'transport', 'mobilite', 'casque'],
+  fitness: ['fitness', 'sport', 'montre', 'cardio', 'entrainement'],
+  organisation: ['rangement', 'boite', 'organisation', 'bureau', 'stockage']
+};
+
+export const vagueWords = ['divers', 'best', 'incroyable', 'miracle', 'top top', 'qualite premium absolue'];
+
+export const cityDistanceBands: Array<{ from: string; to: string; km: number }> = [
+  { from: 'Yaounde', to: 'Douala', km: 240 },
+  { from: 'Abidjan', to: 'Yamoussoukro', km: 240 },
+  { from: 'Dakar', to: 'Thies', km: 70 },
+  { from: 'Lagos', to: 'Abuja', km: 760 },
+  { from: 'Nairobi', to: 'Mombasa', km: 490 }
+];

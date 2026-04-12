@@ -1,0 +1,159 @@
+﻿import { faqKnowledge } from '@/db/mock-ai-data';
+import { formatPrice } from '@/lib/utils';
+import { runAiAdapter } from '@/services/ai/llm-adapter';
+import { toProductLite } from '@/services/marketplace-data';
+import type { AssistantIntent, ChatAssistantInput, ChatAssistantOutput, ProductLite } from '@/types/marketplace-ai';
+
+function detectIntent(message: string): AssistantIntent {
+  const text = message.toLowerCase();
+  if (text.includes('difference') || text.includes('comparer') || text.includes('compare')) return 'product_compare';
+  if (text.includes('livraison') || text.includes('delai') || text.includes('arriver')) return 'faq_delivery';
+  if (text.includes('paiement') || text.includes('payer') || text.includes('carte') || text.includes('mobile money')) return 'faq_payment';
+  if (text.includes('retour') || text.includes('rembourse')) return 'faq_returns';
+  if (text.includes('cherche') || text.includes('besoin') || text.includes('prix') || text.includes('moins de')) return 'product_search';
+  return 'general_help';
+}
+
+function parseBudget(message: string): number | null {
+  const compact = message.replace(/\s/g, '');
+  const budgetMatch = compact.match(/(\d{4,9})/);
+  if (!budgetMatch) return null;
+  return Number(budgetMatch[1]);
+}
+
+function parseCategoryHint(message: string): string | null {
+  const text = message.toLowerCase();
+  if (text.includes('etudiant') || text.includes('student')) return 'organisation';
+  if (text.includes('telephone') || text.includes('power') || text.includes('battery')) return 'energie';
+  if (text.includes('cuisine') || text.includes('mixeur')) return 'cuisine';
+  if (text.includes('securite') || text.includes('camera')) return 'securite';
+  if (text.includes('sport') || text.includes('fitness')) return 'fitness';
+  if (text.includes('mobilite') || text.includes('transport') || text.includes('scooter')) return 'mobilite';
+  return null;
+}
+
+function searchProducts(params: { message: string; country: string; city: string }): ProductLite[] {
+  const all = toProductLite();
+  const budget = parseBudget(params.message);
+  const categoryHint = parseCategoryHint(params.message);
+  const keywords = params.message.toLowerCase().split(/\s+/).filter((token) => token.length > 2);
+
+  const scored = all
+    .map((product) => {
+      let score = 0;
+      if (product.country === params.country) score += 3;
+      if (product.city === params.city) score += 2;
+      if (budget && product.price <= budget) score += 4;
+      if (budget && product.price > budget) score -= 2;
+      if (categoryHint && product.categorySlug === categoryHint) score += 3;
+
+      const haystack = `${product.name} ${product.category} ${product.companyName}`.toLowerCase();
+      for (const keyword of keywords) {
+        if (haystack.includes(keyword)) score += 1;
+      }
+
+      score += Math.round(product.averageRating);
+      return { product, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((entry) => entry.product);
+
+  return scored;
+}
+
+export async function buildChatAssistantReply(input: ChatAssistantInput): Promise<ChatAssistantOutput> {
+  try {
+    const intent = detectIntent(input.message);
+    const suggestions = searchProducts({
+      message: input.message,
+      country: input.country,
+      city: input.city
+    });
+
+    if (intent === 'faq_delivery') {
+      return {
+        intent,
+        answer:
+          input.locale === 'fr'
+            ? `${faqKnowledge.delivery[0]} ${faqKnowledge.delivery[1]}`
+            : 'Delivery timeline depends on city, stock, and transport. Same city is fastest; cross-country is longer.',
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
+    if (intent === 'faq_payment') {
+      return {
+        intent,
+        answer:
+          input.locale === 'fr'
+            ? `${faqKnowledge.payment[0]} ${faqKnowledge.payment[1]}`
+            : 'Min-shop supports local methods and cards depending on country. Payment confirmation happens before shipping.',
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
+    if (intent === 'faq_returns') {
+      return {
+        intent,
+        answer:
+          input.locale === 'fr'
+            ? `${faqKnowledge.returns[0]} ${faqKnowledge.returns[1]}`
+            : 'Returns depend on seller policy and product type. Damaged or non-compliant items can be reported quickly.',
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
+    if (intent === 'product_compare' && suggestions.length >= 2) {
+      const [a, b] = suggestions;
+      const fr = `${a.name} est a ${formatPrice(a.price, input.country)} et ${b.name} est a ${formatPrice(
+        b.price,
+        input.country
+      )}. ${a.averageRating >= b.averageRating ? a.name : b.name} est mieux note localement.`;
+      const en = `${a.name} is ${formatPrice(a.price, input.country)} and ${b.name} is ${formatPrice(
+        b.price,
+        input.country
+      )}. ${a.averageRating >= b.averageRating ? a.name : b.name} currently has a better local rating.`;
+      return { intent, answer: input.locale === 'fr' ? fr : en, suggestions, fallbackUsed: false };
+    }
+
+    if (intent === 'product_search' && suggestions.length > 0) {
+      const ai = await runAiAdapter({
+        locale: input.locale,
+        prompt:
+          input.locale === 'fr'
+            ? `J'ai trouve ${suggestions.length} options adaptees a ${input.city}. Je recommande ${suggestions[0].name} en priorite.`
+            : `I found ${suggestions.length} options for ${input.city}. I recommend ${suggestions[0].name} first.`
+      });
+      return {
+        intent,
+        answer: ai.text,
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
+    return {
+      intent: 'general_help',
+      answer:
+        input.locale === 'fr'
+          ? 'Je peux t aider a trouver un produit, comparer des offres, ou expliquer livraison/paiement/retour.'
+          : 'I can help you find products, compare offers, and explain delivery/payment/returns.',
+      suggestions,
+      fallbackUsed: false
+    };
+  } catch {
+    return {
+      intent: 'general_help',
+      answer:
+        input.locale === 'fr'
+          ? 'Le service IA est indisponible pour le moment. Voici des suggestions basees sur le catalogue local.'
+          : 'The AI service is temporarily unavailable. Here are local catalog suggestions.',
+      suggestions: searchProducts({ message: input.message, country: input.country, city: input.city }),
+      fallbackUsed: true
+    };
+  }
+}

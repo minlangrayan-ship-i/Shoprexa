@@ -4,10 +4,11 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { ProductCard } from '@/components/product-card';
 import { useSite } from '@/components/site-context';
+import { getRegionalDemandAdjustedRating } from '@/lib/mock-marketplace';
 
 export default function SellerPublicStorePage() {
   const params = useParams<{ slug: string }>();
-  const { sellers, products, t } = useSite();
+  const { sellers, products, users, country, city, t } = useSite();
 
   const seller = sellers.find((entry) => entry.slug === params.slug || entry.id === params.slug);
   if (!seller) {
@@ -37,7 +38,7 @@ export default function SellerPublicStorePage() {
         city: product.sellerCity
       },
       badges: product.badges,
-      averageRating: product.averageRating,
+      averageRating: getRegionalDemandAdjustedRating(product, users, country, city, 'city'),
       kind: product.kind,
       serviceDuration: product.serviceDuration,
       serviceAvailability: product.serviceAvailability
@@ -52,7 +53,7 @@ export default function SellerPublicStorePage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">{seller.company}</h1>
-            <p className="text-sm text-slate-600">{seller.city}, {seller.country} - {seller.verified ? t('Vendeur verifie', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
+            <p className="text-sm text-slate-600">{seller.city}, {seller.country} - {seller.verified ? t('Vendeur vérifié', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
             <p className="text-sm text-slate-600">{seller.about}</p>
           </div>
         </div>

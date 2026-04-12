@@ -20,7 +20,7 @@ export default function SellerStatsPage() {
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Vues produits', 'Product views')}</p><p className="text-2xl font-bold">{totalViews}</p></div>
-          <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Ventes simulees', 'Simulated sales')}</p><p className="text-2xl font-bold">{formatPrice(totalSales)}</p></div>
+          <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Ventes simulées', 'Simulated sales')}</p><p className="text-2xl font-bold">{formatPrice(totalSales)}</p></div>
           <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-500">{t('Panier moyen', 'Average basket')}</p><p className="text-2xl font-bold">{formatPrice(averageOrder)}</p></div>
         </div>
 

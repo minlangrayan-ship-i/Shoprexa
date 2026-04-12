@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { WhatsAppFloat } from '@/components/whatsapp-float';
-import { rankSellersByRating } from '@/lib/mock-marketplace';
+import { getRegionalDemandAdjustedRating, rankSellersByRating } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function HomePage() {
-  const { country, city, products, reviews, testimonials, sellers, t } = useSite();
+  const { country, city, products, reviews, testimonials, sellers, users, t } = useSite();
 
   const featuredProducts = useMemo(() => {
     return products
@@ -32,12 +32,12 @@ export default function HomePage() {
           city: product.sellerCity
         },
         badges: product.badges,
-        averageRating: product.averageRating,
+        averageRating: getRegionalDemandAdjustedRating(product, users, country, city, 'country'),
         kind: product.kind,
         serviceDuration: product.serviceDuration,
         serviceAvailability: product.serviceAvailability
       }));
-  }, [country, products]);
+  }, [city, country, products, users]);
 
   const topSellers = useMemo(() => rankSellersByRating(reviews, country, undefined, sellers).slice(0, 6), [country, reviews, sellers]);
   const regionalTestimonials = useMemo(
@@ -52,19 +52,19 @@ export default function HomePage() {
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
             <p className="mb-4 inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">{t('Marketplace africaine premium', 'Premium African marketplace')}</p>
-            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prets a simplifier votre vie.', 'The best everyday products, built for African realities.')}</h1>
-            <p className="mt-5 text-slate-600">{t('Catalogue visuel optimise pour', 'Visual-first catalog optimized for')} {city}, {country}. {t('Images nettes, vendeurs verifies, parcours rapide.', 'Sharp images, verified sellers, frictionless checkout flow.')}</p>
+            <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prêts à simplifier votre vie.', 'The best everyday products, built for African realities.')}</h1>
+            <p className="mt-5 text-slate-600">{t('Catalogue visuel optimisé pour', 'Visual-first catalog optimized for')} {city}, {country}. {t('Images nettes, vendeurs vérifiés, parcours rapide.', 'Sharp images, verified sellers, frictionless checkout flow.')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white">{t('Voir le catalogue', 'Browse catalog')}</Link>
-              <Link href="/auth/register" className="rounded-xl border px-5 py-3 font-semibold">{t('Creer un compte', 'Create account')}</Link>
+              <Link href="/auth/register" className="rounded-xl border px-5 py-3 font-semibold">{t('Créer un compte', 'Create account')}</Link>
             </div>
           </div>
 
           <div className="rounded-2xl border bg-gradient-to-br from-brand-600 to-dark p-8 text-white shadow-xl">
             <h3 className="text-2xl font-bold">{t('Pourquoi Min-shop ?', 'Why Min-shop?')}</h3>
             <ul className="mt-5 list-disc space-y-2 pl-5 text-sm marker:text-white">
-              <li>{t('Produits adaptes aux realites africaines', 'Products tailored to African realities')}</li>
-              <li>{t('Vendeurs verifies et notes visibles', 'Verified vendors with visible ratings')}</li>
+              <li>{t('Produits adaptés aux réalités africaines', 'Products tailored to African realities')}</li>
+              <li>{t('Vendeurs vérifiés et notes visibles', 'Verified vendors with visible ratings')}</li>
               <li>{t('UX mobile-first orientee conversion', 'Mobile-first conversion-focused UX')}</li>
             </ul>
           </div>
@@ -89,7 +89,7 @@ export default function HomePage() {
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {topSellers.map((seller) => (
             <Link key={seller.id} href={`/seller/${seller.slug}`} className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1">
-              <p className="text-xs font-semibold text-emerald-700">{seller.verified ? t('Vendeur verifie', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
+              <p className="text-xs font-semibold text-emerald-700">{seller.verified ? t('Vendeur vérifié', 'Verified seller') : t('Nouveau vendeur', 'New seller')}</p>
               <h3 className="mt-1 text-lg font-bold">{seller.company}</h3>
               <p className="text-sm text-slate-600">{seller.city}, {seller.country}</p>
               <p className="mt-2 text-sm">{t('Note', 'Rating')}: {seller.averageRating}/5</p>
@@ -99,7 +99,7 @@ export default function HomePage() {
       </section>
 
       <section className="section py-10">
-        <h2 className="text-2xl font-bold">{t('Avis clients recents', 'Recent customer comments')}</h2>
+        <h2 className="text-2xl font-bold">{t('Avis clients récents', 'Recent customer comments')}</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {(regionalTestimonials.length > 0
             ? regionalTestimonials.map((entry) => ({

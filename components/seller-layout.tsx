@@ -7,6 +7,7 @@ import { useSite } from '@/components/site-context';
 const links = [
   { href: '/seller/dashboard', fr: 'Tableau de bord', en: 'Dashboard' },
   { href: '/seller/products', fr: 'Gestion produits', en: 'Product management' },
+  { href: '/seller/ai-generator', fr: 'Assistant fiches', en: 'Listing assistant' },
   { href: '/seller/stock', fr: 'Gestion stock', en: 'Stock management' },
   { href: '/seller/orders', fr: 'Commandes', en: 'Orders' },
   { href: '/seller/stats', fr: 'Statistiques', en: 'Statistics' },
@@ -18,7 +19,7 @@ export function SellerLayout({ children }: { children: React.ReactNode }) {
   const { sessionUser, t } = useSite();
 
   if (!sessionUser || sessionUser.role !== 'seller') {
-    return <section className="section py-12"><div className="card p-6">{t('Acces vendeur requis.', 'Seller access required.')}</div></section>;
+    return <section className="section py-12"><div className="card p-6">{t('Accès vendeur requis.', 'Seller access required.')}</div></section>;
   }
 
   return (

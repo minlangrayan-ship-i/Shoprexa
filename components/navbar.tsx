@@ -1,12 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, MessageCircle, Globe2, UserRound } from 'lucide-react';
+import { ShoppingCart, Globe2, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { africaCountries } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
-
-const WHATSAPP_NUMBER = '237692714985';
 
 export function Navbar() {
   const [count, setCount] = useState(0);
@@ -51,11 +49,10 @@ export function Navbar() {
 
         <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-slate-700">
           <Link href="/shop">{t('Catalogue', 'Catalog')}</Link>
+          <Link href="/assistant">{t('Assistant IA', 'AI assistant')}</Link>
           <Link href="/sellers">{t('Vendeurs', 'Sellers')}</Link>
           <Link href="/dropshippers">{t('Dropshippers', 'Dropshippers')}</Link>
-          <Link href="/about">{t('A propos', 'About')}</Link>
-
-          <a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="hidden items-center gap-1 rounded-full border px-3 py-1.5 md:flex"><MessageCircle size={14} /> WhatsApp</a>
+          <Link href="/about">{t('À propos', 'About')}</Link>
 
           <Link href="/cart" className="relative">
             <ShoppingCart size={20} />
@@ -68,7 +65,7 @@ export function Navbar() {
               {sessionUser.role === 'seller' ? <Link href="/seller/dashboard" className="rounded-full border px-3 py-1.5 text-xs font-semibold">{t('Espace vendeur', 'Seller area')}</Link> : null}
               {sessionUser.role === 'admin' ? <Link href="/admin" className="rounded-full border px-3 py-1.5 text-xs font-semibold">Admin</Link> : null}
               <button onClick={logout} className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold">
-                <UserRound size={13} /> {t('Deconnexion', 'Logout')}
+                <UserRound size={13} /> {t('Déconnexion', 'Logout')}
               </button>
             </>
           ) : (

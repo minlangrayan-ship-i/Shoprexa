@@ -48,7 +48,7 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-2xl rounded-2xl border bg-white p-7 shadow-sm">
         <h1 className="text-3xl font-bold">{t('Inscription ouverte', 'Open registration')}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {t('Creation de compte rapide et rassurante. Connexion Google/telephone pourra etre ajoutee ensuite.', 'Fast and trusted account creation. Google/phone login can be added later.')}
+          {t('Création de compte rapide et rassurante. Connexion Google/téléphone pourra être ajoutée ensuite.', 'Fast and trusted account creation. Google/phone login can be added later.')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
@@ -57,7 +57,7 @@ export default function RegisterPage() {
           <input
             required
             name="phone"
-            placeholder={`${t('WhatsApp / Telephone', 'WhatsApp / Phone')} (${countryPhonePrefixes[country] ?? '+'}...)`}
+            placeholder={`${t('WhatsApp / Téléphone', 'WhatsApp / Phone')} (${countryPhonePrefixes[country] ?? '+'}...)`}
             className="rounded-xl border px-3 py-2"
           />
           <input required minLength={8} type="password" name="password" placeholder={t('Mot de passe (8+)', 'Password (8+)')} className="rounded-xl border px-3 py-2" />
@@ -97,13 +97,13 @@ export default function RegisterPage() {
 
           {role === 'client' ? (
             <div className="rounded-xl border p-3 md:col-span-2">
-              <p className="mb-2 text-sm font-semibold">{t('Vos preferences produits', 'Your product preferences')}</p>
+              <p className="mb-2 text-sm font-semibold">{t('Vos préférences produits', 'Your product preferences')}</p>
               <div className="grid gap-2 text-sm md:grid-cols-3">
                 {[
-                  ['energie', 'Energie'],
+                  ['energie', 'Énergie'],
                   ['cuisine', 'Cuisine'],
-                  ['securite', 'Securite'],
-                  ['mobilite', 'Mobilite'],
+                  ['securite', 'Sécurité'],
+                  ['mobilite', 'Mobilité'],
                   ['fitness', 'Fitness'],
                   ['organisation', 'Organisation']
                 ].map(([slug, label]) => (
@@ -125,7 +125,7 @@ export default function RegisterPage() {
           ) : null}
 
           <button disabled={loading} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white md:col-span-2">
-            {loading ? t('Creation...', 'Creating...') : t('Creer mon compte', 'Create my account')}
+            {loading ? t('Création...', 'Creating...') : t('Créer mon compte', 'Create my account')}
           </button>
           {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
         </form>

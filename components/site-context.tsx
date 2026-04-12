@@ -26,6 +26,7 @@ import {
   type SellerOrder,
   type SellerReview
 } from '@/lib/mock-marketplace';
+import type { CartItem } from '@/lib/types';
 
 type Locale = 'fr' | 'en';
 
@@ -53,6 +54,12 @@ type ProfileUpdatePayload = {
   about?: string;
 };
 
+type AdminNotification = {
+  id: string;
+  message: string;
+  createdAt: string;
+};
+
 type SiteContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -70,12 +77,15 @@ type SiteContextValue = {
   complaints: SellerComplaint[];
   testimonials: ClientTestimonial[];
   recruitmentOffers: RecruitmentOffer[];
+  adminNotifications: AdminNotification[];
   siteVisits: number;
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
   logout: () => void;
   updateProfile: (payload: ProfileUpdatePayload) => { ok: boolean; message: string };
   addReview: (review: Omit<SellerReview, 'id' | 'createdAt'>) => { ok: boolean; message: string };
+  addCompanyReviewForPartner: (payload: { targetSellerId: string; rating: number; comment: string }) => { ok: boolean; message: string };
+  recordClientOrder: (items: CartItem[]) => void;
   addSellerProduct: (payload: {
     name: string;
     description: string;
@@ -109,7 +119,7 @@ type SiteContextValue = {
     payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
   ) => { ok: boolean; message: string };
   adminDeleteProduct: (productId: string) => { ok: boolean; message: string };
-  companySendRecruitmentOffer: (targetSellerId: string, productIds: string[]) => { ok: boolean; message: string };
+  companySendRecruitmentOffer: (targetSellerId: string, productIds: string[], commissionRate: number) => { ok: boolean; message: string };
   respondRecruitmentOffer: (offerId: string, decision: 'accepted' | 'rejected') => { ok: boolean; message: string };
   adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
   adminDeleteUser: (userId: string) => { ok: boolean; message: string };
@@ -145,11 +155,12 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<DemoUser[]>(normalizeSingleAdmin(demoUsers));
   const [sellers, setSellers] = useState<MarketplaceSeller[]>(normalizeSellersSnapshot(sellerProfiles));
   const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
-  const [orders] = useState<SellerOrder[]>(seededSellerOrders);
+  const [orders, setOrders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
   const [complaints] = useState<SellerComplaint[]>(seededSellerComplaints);
   const [testimonials] = useState<ClientTestimonial[]>(seededTestimonials);
   const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [siteVisits, setSiteVisits] = useState(0);
 
   useEffect(() => {
@@ -172,8 +183,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         users?: DemoUser[];
         sellers?: MarketplaceSeller[];
         products?: MarketplaceProduct[];
+        orders?: SellerOrder[];
         reviews?: SellerReview[];
         recruitmentOffers?: RecruitmentOffer[];
+        adminNotifications?: AdminNotification[];
         siteVisits?: number;
       };
 
@@ -184,8 +197,14 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.users?.length) setUsers(normalizeSingleAdmin(parsed.users));
       if (parsed.sellers?.length) setSellers(normalizeSellersSnapshot(parsed.sellers));
       if (parsed.products?.length) setProducts(parsed.products);
+      if (parsed.orders?.length) setOrders(parsed.orders);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
-      if (parsed.recruitmentOffers?.length) setRecruitmentOffers(parsed.recruitmentOffers);
+      if (parsed.recruitmentOffers?.length) {
+        setRecruitmentOffers(
+          parsed.recruitmentOffers.map((offer) => ({ ...offer, commissionRate: offer.commissionRate ?? 10 }))
+        );
+      }
+      if (parsed.adminNotifications?.length) setAdminNotifications(parsed.adminNotifications);
       if (typeof parsed.siteVisits === 'number') setSiteVisits(parsed.siteVisits);
     } catch {
       // Ignore localStorage parsing errors.
@@ -193,8 +212,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers, siteVisits }));
-  }, [locale, country, city, sessionUser, users, sellers, products, reviews, recruitmentOffers, siteVisits]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, orders, reviews, recruitmentOffers, adminNotifications, siteVisits }));
+  }, [locale, country, city, sessionUser, users, sellers, products, orders, reviews, recruitmentOffers, adminNotifications, siteVisits]);
 
   const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
@@ -241,7 +260,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (!payload.name.trim()) return { ok: false, message: t('Nom requis.', 'Name is required.') };
     if (!payload.email.includes('@')) return { ok: false, message: t('Email invalide.', 'Invalid email.') };
     if (payload.password.length < 8) return { ok: false, message: t('Mot de passe trop court (8+).', 'Password too short (8+).') };
-    if (!payload.phone.trim()) return { ok: false, message: t('Telephone requis.', 'Phone is required.') };
+    if (!payload.phone.trim()) return { ok: false, message: t('Téléphone requis.', 'Phone is required.') };
     const expectedPrefix = countryPhonePrefixes[payload.country] ?? '+';
     if (!payload.phone.startsWith(expectedPrefix)) {
       return {
@@ -251,7 +270,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     }
 
     const exists = users.some((user) => user.email.toLowerCase() === payload.email.toLowerCase());
-    if (exists) return { ok: false, message: t('Cet email existe deja.', 'This email already exists.') };
+    if (exists) return { ok: false, message: t('Cet email existe déjà.', 'This email already exists.') };
 
     const userId = `user-${Date.now()}`;
     const sellerId = payload.role === 'seller' ? `seller-${Date.now()}` : undefined;
@@ -304,7 +323,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     const session = mapSession(nextUser);
     setSessionUser(session);
 
-    return { ok: true, message: t('Compte cree avec succes.', 'Account created successfully.'), user: session };
+    return { ok: true, message: t('Compte créé avec succès.', 'Account created successfully.'), user: session };
   };
 
   const logout = () => setSessionUser(null);
@@ -359,12 +378,21 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         : current
     );
 
-    return { ok: true, message: t('Profil mis a jour.', 'Profile updated.') };
+    return { ok: true, message: t('Profil mis à jour.', 'Profile updated.') };
   };
 
   const addReview = (review: Omit<SellerReview, 'id' | 'createdAt'>) => {
     if (!sessionUser || sessionUser.role !== 'client') {
-      return { ok: false, message: t('Seuls les clients inscrits et connectes peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.') };
+      return { ok: false, message: t('Seuls les clients inscrits et connectés peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.') };
+    }
+    const hasPurchasedFromSeller = orders.some(
+      (order) => order.customerName === sessionUser.name && order.sellerId === review.sellerId
+    );
+    if (!hasPurchasedFromSeller) {
+      return {
+        ok: false,
+        message: t('Tu peux noter uniquement un vendeur avec lequel tu as déjà acheté.', 'You can review only sellers you already purchased from.')
+      };
     }
 
     setReviews((current) => [
@@ -375,7 +403,76 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       },
       ...current
     ]);
-    return { ok: true, message: t('Avis enregistre. Merci !', 'Review submitted. Thank you!') };
+    return { ok: true, message: t('Avis enregistré. Merci !', 'Review submitted. Thank you!') };
+  };
+
+  const addCompanyReviewForPartner = (payload: { targetSellerId: string; rating: number; comment: string }) => {
+    if (!sessionUser?.sellerId || sessionUser.role !== 'seller' || sessionUser.sellerType !== 'company') {
+      return { ok: false, message: t('Action réservée aux entreprises.', 'Company-only action.') };
+    }
+    const target = sellers.find((entry) => entry.id === payload.targetSellerId);
+    if (!target || target.sellerType !== 'dropshipper') {
+      return { ok: false, message: t('Seuls les dropshippers peuvent être notés ici.', 'Only dropshippers can be reviewed here.') };
+    }
+    const acceptedCollaboration = recruitmentOffers.some(
+      (offer) =>
+        offer.companySellerId === sessionUser.sellerId &&
+        offer.targetSellerId === payload.targetSellerId &&
+        offer.status === 'accepted'
+    );
+    if (!acceptedCollaboration) {
+      return {
+        ok: false,
+        message: t('Tu peux noter uniquement un dropshipper avec lequel tu as une collaboration acceptée.', 'You can review only a dropshipper with an accepted collaboration.')
+      };
+    }
+
+    const company = sellers.find((entry) => entry.id === sessionUser.sellerId);
+    setReviews((current) => [
+      {
+        id: `rev-company-${Date.now()}`,
+        sellerId: payload.targetSellerId,
+        customerName: `${company?.company ?? sessionUser.name} (Entreprise)`,
+        rating: payload.rating,
+        comment: payload.comment,
+        createdAt: new Date().toISOString().slice(0, 10)
+      },
+      ...current
+    ]);
+    return { ok: true, message: t('Évaluation partenaire enregistrée.', 'Partner review recorded.') };
+  };
+
+  const recordClientOrder = (items: CartItem[]) => {
+    if (!sessionUser || sessionUser.role !== 'client' || items.length === 0) return;
+    const createdAt = new Date().toISOString().slice(0, 10);
+    const nextOrders: SellerOrder[] = [];
+
+    for (const item of items) {
+      const product = products.find((entry) => entry.id === item.id);
+      if (!product) continue;
+      nextOrders.push({
+        id: `ord-${Date.now()}-${item.id}`,
+        sellerId: product.sellerId,
+        productId: product.id,
+        customerName: sessionUser.name,
+        quantity: item.quantity,
+        total: item.price * item.quantity,
+        status: 'paid',
+        createdAt
+      });
+      setAdminNotifications((current) => [
+        {
+          id: `notif-${Date.now()}-${item.id}`,
+          message: `Transaction validee: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name})`,
+          createdAt
+        },
+        ...current
+      ]);
+    }
+
+    if (nextOrders.length > 0) {
+      setOrders((current) => [...nextOrders, ...current]);
+    }
   };
 
   const addSellerProduct = (payload: {
@@ -390,7 +487,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     serviceAvailability?: string;
     targetCountries?: string[];
   }) => {
-    if (!sessionUser?.sellerId) return { ok: false, message: t('Acces vendeur requis.', 'Seller access required.') };
+    if (!sessionUser?.sellerId) return { ok: false, message: t('Accès vendeur requis.', 'Seller access required.') };
 
     const seller = sellers.find((entry) => entry.id === sessionUser.sellerId);
     if (!seller) return { ok: false, message: t('Profil vendeur introuvable.', 'Seller profile not found.') };
@@ -432,7 +529,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     };
 
     setProducts((current) => [product, ...current]);
-    return { ok: true, message: t('Produit ajoute.', 'Product added.') };
+    return { ok: true, message: t('Produit ajouté.', 'Product added.') };
   };
 
   const updateSellerProduct = (
@@ -484,7 +581,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     serviceAvailability?: string;
     targetCountries?: string[];
   }) => {
-    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
     const seller = sellers.find((entry) => entry.id === payload.sellerId);
     if (!seller) return { ok: false, message: t('Vendeur introuvable.', 'Seller not found.') };
 
@@ -513,15 +610,18 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       targetCountries: payload.targetCountries?.length ? payload.targetCountries : [seller.country]
     };
     setProducts((current) => [product, ...current]);
-    return { ok: true, message: t('Produit ajoute par admin.', 'Product added by admin.') };
+    return { ok: true, message: t('Produit ajouté par admin.', 'Product added by admin.') };
   };
 
-  const companySendRecruitmentOffer = (targetSellerId: string, productIds: string[]) => {
+  const companySendRecruitmentOffer = (targetSellerId: string, productIds: string[], commissionRate: number) => {
     if (!sessionUser?.sellerId || sessionUser.role !== 'seller' || sessionUser.sellerType !== 'company') {
-      return { ok: false, message: t('Action reservee aux entreprises.', 'Company-only action.') };
+      return { ok: false, message: t('Action réservée aux entreprises.', 'Company-only action.') };
     }
     if (!targetSellerId || productIds.length === 0) {
-      return { ok: false, message: t('Selection incomplete.', 'Selection incomplete.') };
+      return { ok: false, message: t('Sélection incomplète.', 'Selection incomplete.') };
+    }
+    if (commissionRate <= 0 || commissionRate > 100) {
+      return { ok: false, message: t('Commission invalide (1-100%).', 'Invalid commission (1-100%).') };
     }
     setRecruitmentOffers((current) => [
       {
@@ -529,12 +629,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         companySellerId: sessionUser.sellerId!,
         targetSellerId,
         productIds,
+        commissionRate,
         status: 'pending',
         createdAt: new Date().toISOString().slice(0, 10)
       },
       ...current
     ]);
-    return { ok: true, message: t('Offre envoyee.', 'Offer sent.') };
+    return { ok: true, message: t('Offre envoyée.', 'Offer sent.') };
   };
 
   const respondRecruitmentOffer = (offerId: string, decision: 'accepted' | 'rejected') => {
@@ -546,14 +647,14 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         offer.id === offerId && offer.targetSellerId === sessionUser.sellerId ? { ...offer, status: decision } : offer
       )
     );
-    return { ok: true, message: decision === 'accepted' ? t('Offre acceptee.', 'Offer accepted.') : t('Offre refusee.', 'Offer rejected.') };
+    return { ok: true, message: decision === 'accepted' ? t('Offre acceptée.', 'Offer accepted.') : t('Offre refusée.', 'Offer rejected.') };
   };
 
   const adminUpdateProduct = (
     productId: string,
     payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
   ) => {
-    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
     setProducts((current) =>
       current.map((product) =>
         product.id === productId
@@ -569,20 +670,20 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           : product
       )
     );
-    return { ok: true, message: t('Produit mis a jour.', 'Product updated.') };
+    return { ok: true, message: t('Produit mis à jour.', 'Product updated.') };
   };
 
   const adminDeleteProduct = (productId: string) => {
-    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
     setProducts((current) => current.filter((product) => product.id !== productId));
-    return { ok: true, message: t('Produit supprime.', 'Product deleted.') };
+    return { ok: true, message: t('Produit supprimé.', 'Product deleted.') };
   };
 
   const adminChangeUserRole = (userId: string, role: AccountRole) => {
-    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
-    if (sessionUser.id === userId && role !== 'admin') return { ok: false, message: t('Tu ne peux pas retirer ton role admin.', 'You cannot remove your own admin role.') };
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
+    if (sessionUser.id === userId && role !== 'admin') return { ok: false, message: t('Tu ne peux pas retirer ton rôle admin.', 'You cannot remove your own admin role.') };
     if (role === 'admin' && userId !== PRIMARY_ADMIN_ID) {
-      return { ok: false, message: t('Un seul admin est autorise: le compte principal.', 'Only one admin is allowed: the primary account.') };
+      return { ok: false, message: t('Un seul admin est autorisé: le compte principal.', 'Only one admin is allowed: the primary account.') };
     }
 
     const targetUser = users.find((entry) => entry.id === userId);
@@ -621,11 +722,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       ]);
     }
 
-    return { ok: true, message: t('Role mis a jour.', 'Role updated.') };
+    return { ok: true, message: t('Rôle mis à jour.', 'Role updated.') };
   };
 
   const adminDeleteUser = (userId: string) => {
-    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action reservee admin.', 'Admin-only action.') };
+    if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
     if (sessionUser.id === userId) return { ok: false, message: t('Tu ne peux pas supprimer ton propre compte.', 'You cannot delete your own account.') };
 
     const target = users.find((entry) => entry.id === userId);
@@ -638,13 +739,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       setProducts((current) => current.filter((product) => product.sellerId !== target.sellerId));
     }
 
-    return { ok: true, message: t('Compte supprime.', 'Account deleted.') };
+    return { ok: true, message: t('Compte supprimé.', 'Account deleted.') };
   };
 
   const deleteCurrentAccount = () => {
     if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
     if (sessionUser.role === 'admin') {
-      return { ok: false, message: t('Un compte admin ne peut pas etre supprime.', 'An admin account cannot be deleted.') };
+      return { ok: false, message: t('Un compte admin ne peut pas être supprimé.', 'An admin account cannot be deleted.') };
     }
 
     const target = users.find((entry) => entry.id === sessionUser.id);
@@ -659,7 +760,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     }
 
     setSessionUser(null);
-    return { ok: true, message: t('Ton compte a ete supprime.', 'Your account has been deleted.') };
+    return { ok: true, message: t('Ton compte a été supprimé.', 'Your account has been deleted.') };
   };
 
   const t = (fr: string, en: string) => (locale === 'fr' ? fr : en);
@@ -698,12 +799,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         complaints,
         testimonials,
         recruitmentOffers,
+        adminNotifications,
         siteVisits,
         login,
         register,
         logout,
         updateProfile,
         addReview,
+        addCompanyReviewForPartner,
+        recordClientOrder,
         addSellerProduct,
         updateSellerProduct,
         deleteSellerProduct,

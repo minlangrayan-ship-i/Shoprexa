@@ -23,7 +23,7 @@ export default function ProfilePage() {
   if (!sessionUser) {
     return (
       <section className="section py-12">
-        <div className="card p-6">{t('Connecte-toi pour acceder au profil.', 'Please login to access your profile.')}</div>
+        <div className="card p-6">{t('Connecte-toi pour accéder au profil.', 'Please login to access your profile.')}</div>
       </section>
     );
   }
@@ -77,7 +77,7 @@ export default function ProfilePage() {
 
         <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
           <input name="name" defaultValue={sessionUser.name} placeholder={t('Nom complet', 'Full name')} className="rounded-xl border px-3 py-2" />
-          <input name="phone" defaultValue={sessionUser.phone} placeholder={t('Telephone', 'Phone')} className="rounded-xl border px-3 py-2" />
+          <input name="phone" defaultValue={sessionUser.phone} placeholder={t('Téléphone', 'Phone')} className="rounded-xl border px-3 py-2" />
 
           <select
             name="country"
@@ -112,7 +112,7 @@ export default function ProfilePage() {
             </button>
           ) : (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-700 md:col-span-2">
-              {t('Le compte admin ne peut pas etre supprime depuis le profil.', 'Admin account cannot be deleted from profile.')}
+              {t('Le compte admin ne peut pas être supprimé depuis le profil.', 'Admin account cannot be deleted from profile.')}
             </p>
           )}
           {status ? <p className="text-sm md:col-span-2">{status}</p> : null}

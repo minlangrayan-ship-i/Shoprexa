@@ -95,7 +95,7 @@ export default function SellersPage() {
     <section className="section py-12">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('Vendeurs verifies', 'Verified vendors')}</h1>
+          <h1 className="text-3xl font-bold">{t('Vendeurs vérifiés', 'Verified vendors')}</h1>
           <p className="text-slate-600">{t('Classement local pour', 'Local ranking for')} {city}, {country}</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
@@ -112,24 +112,24 @@ export default function SellersPage() {
           </select>
           <select value={niche} onChange={(event) => setNiche(event.target.value)} className="rounded-lg border px-2 py-1 text-xs">
             <option value="">{t('Toutes niches', 'All niches')}</option>
-            <option value="energie">Energie</option>
+            <option value="energie">Énergie</option>
             <option value="cuisine">Cuisine</option>
-            <option value="securite">Securite</option>
-            <option value="mobilite">Mobilite</option>
+            <option value="securite">Sécurité</option>
+            <option value="mobilite">Mobilité</option>
             <option value="fitness">Fitness</option>
             <option value="organisation">Organisation</option>
           </select>
           <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs">
             <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
-            {t('Verifies uniquement', 'Verified only')}
+            {t('Vérifiés uniquement', 'Verified only')}
           </label>
         </div>
         <button onClick={resetFilters} className="rounded-lg border px-3 py-1 text-xs font-semibold">
-          {t('Reinitialiser filtres', 'Reset filters')}
+          {t('Réinitialiser les filtres', 'Reset filters')}
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-slate-500">{rankedSellers.length} {t('vendeurs trouves', 'sellers found')}</p>
+      <p className="mt-3 text-xs text-slate-500">{rankedSellers.length} {t('vendeurs trouvés', 'sellers found')}</p>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         {rankedSellers.map((seller) => {
@@ -144,13 +144,13 @@ export default function SellersPage() {
                 <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
                   {trust.hasBadge
                     ? trust.badgeSource === 'admin'
-                      ? t('Verifie Min-shop (provisoire)', 'Min-shop Verified (provisional)')
-                      : t('Verifie Min-shop', 'Min-shop Verified')
+                      ? t('Vérifié Min-shop (provisoire)', 'Min-shop Verified (provisional)')
+                      : t('Vérifié Min-shop', 'Min-shop Verified')
                     : t('Sans badge', 'No badge')}
                 </span>
               </div>
               {trust.hasBadge ? (
-                <p className="mt-2 text-xs font-semibold text-emerald-700">✔ {t('Badge Verifie Min-shop visible dans le classement', 'Min-shop Verified badge visible in ranking')}</p>
+                <p className="mt-2 text-xs font-semibold text-emerald-700">✔ {t('Badge Vérifié Min-shop visible dans le classement', 'Min-shop Verified badge visible in ranking')}</p>
               ) : null}
 
               <p className="mt-2 text-sm text-slate-600">{seller.name}</p>
@@ -160,7 +160,7 @@ export default function SellersPage() {
               <p className="mt-1 text-xs text-slate-500">
                 {trust.satisfiedClients > 0
                   ? `+${trust.satisfiedClients} ${t('clients satisfaits', 'satisfied clients')}`
-                  : t('Donnees de satisfaction en cours', 'Satisfaction data in progress')}
+                  : t('Données de satisfaction en cours', 'Satisfaction data in progress')}
               </p>
 
               <div className="mt-3">
@@ -190,18 +190,18 @@ export default function SellersPage() {
 
       {rankedSellers.length === 0 ? (
         <div className="mt-6 rounded-xl border bg-white p-4 text-sm text-slate-600">
-          {t('Aucun vendeur pour ces filtres. Reinitialise les filtres.', 'No sellers for these filters. Reset filters.')}
+          {t('Aucun vendeur pour ces filtres. Réinitialise les filtres.', 'No sellers for these filters. Reset filters.')}
         </div>
       ) : null}
 
       {dashboard && selectedSeller ? (
         <section ref={dashboardRef} className="mt-10 rounded-2xl border bg-white p-6 shadow-sm">
-          <h3 className="text-2xl font-bold">{t('Apercu vendeur', 'Seller overview')} - {selectedSeller.company}</h3>
+          <h3 className="text-2xl font-bold">{t('Aperçu vendeur', 'Seller overview')} - {selectedSeller.company}</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Produits</p><p className="text-xl font-bold">{dashboard.products.length}</p></div>
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Stock total</p><p className="text-xl font-bold">{dashboard.totalStock}</p></div>
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Commandes</p><p className="text-xl font-bold">{dashboard.orders.length}</p></div>
-            <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">CA simule</p><p className="text-xl font-bold">{formatPrice(dashboard.revenue)}</p></div>
+            <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">CA simulé</p><p className="text-xl font-bold">{formatPrice(dashboard.revenue)}</p></div>
           </div>
         </section>
       ) : null}
@@ -210,7 +210,7 @@ export default function SellersPage() {
         <h3 className="text-xl font-bold">{t('Noter un vendeur', 'Rate a vendor')}</h3>
         {!sessionUser || sessionUser.role !== 'client' ? (
           <p className="mt-2 text-sm text-slate-600">
-            {t('Seuls les clients inscrits et connectes peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.')}
+            {t('Seuls les clients inscrits et connectés peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.')}
           </p>
         ) : null}
         <form onSubmit={onReviewSubmit} className="mt-4 grid gap-3 md:grid-cols-2">

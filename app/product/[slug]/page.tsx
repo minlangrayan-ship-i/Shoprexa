@@ -6,6 +6,8 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Star } from 'lucide-react';
 import { useSite } from '@/components/site-context';
+import { DeliveryEstimateCard } from '@/features/delivery-estimator/components/delivery-estimate-card';
+import { getRegionalDemandAdjustedRating } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { ProductCard } from '@/components/product-card';
 
@@ -13,7 +15,7 @@ const WHATSAPP_NUMBER = '237692714985';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
-  const { products, sellers, country, t } = useSite();
+  const { locale, products, sellers, users, country, city, t } = useSite();
 
   const product = useMemo(() => products.find((entry) => entry.slug === params.slug), [params.slug, products]);
   const [activeImage, setActiveImage] = useState(0);
@@ -25,6 +27,8 @@ export default function ProductDetailPage() {
       </section>
     );
   }
+
+  const demandRating = getRegionalDemandAdjustedRating(product, users, country, city, 'city');
 
   const similar = products
     .filter((entry) => entry.categorySlug === product.categorySlug && entry.id !== product.id)
@@ -46,7 +50,7 @@ export default function ProductDetailPage() {
         city: entry.sellerCity
       },
       badges: entry.badges,
-      averageRating: entry.averageRating,
+      averageRating: getRegionalDemandAdjustedRating(entry, users, country, city, 'city'),
       kind: entry.kind,
       serviceDuration: entry.serviceDuration,
       serviceAvailability: entry.serviceAvailability
@@ -89,7 +93,7 @@ export default function ProductDetailPage() {
 
           <div className="mt-3 flex items-center gap-1 text-amber-600">
             <Star size={16} fill="currentColor" />
-            <span className="text-sm font-semibold">{product.averageRating.toFixed(1)}/5</span>
+            <span className="text-sm font-semibold">{demandRating.toFixed(1)}/5</span>
           </div>
 
           <p className="mt-4 text-slate-600">{product.description}</p>
@@ -105,13 +109,25 @@ export default function ProductDetailPage() {
             <p className={product.stock <= 10 ? 'font-semibold text-amber-600' : 'font-semibold text-emerald-700'}>
               {t('Stock disponible', 'Available stock')}: {product.stock}
             </p>
-            {product.kind === 'service' ? <p>{t('Duree', 'Duration')}: {product.serviceDuration ?? t('Sur devis', 'On quote')}</p> : null}
-            {product.kind === 'service' ? <p>{t('Disponibilite', 'Availability')}: {product.serviceAvailability ?? t('Sur rendez-vous', 'By appointment')}</p> : null}
+            {product.kind === 'service' ? <p>{t('Durée', 'Duration')}: {product.serviceDuration ?? t('Sur devis', 'On quote')}</p> : null}
+            {product.kind === 'service' ? <p>{t('Disponibilité', 'Availability')}: {product.serviceAvailability ?? t('Sur rendez-vous', 'By appointment')}</p> : null}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/cart" className="rounded-xl bg-dark px-5 py-3 font-semibold text-white">{t('Commander maintenant', 'Order now')}</Link>
             <a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="rounded-xl border px-5 py-3 font-semibold">WhatsApp</a>
+          </div>
+
+          <div className="mt-6">
+            <DeliveryEstimateCard
+              locale={locale}
+              sellerCountry={product.sellerCountry}
+              sellerCity={product.sellerCity}
+              clientCountry={country}
+              clientCity={city}
+              stock={product.stock}
+              kind={product.kind ?? 'product'}
+            />
           </div>
         </div>
       </div>

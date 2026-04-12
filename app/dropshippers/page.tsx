@@ -37,7 +37,7 @@ export default function DropshippersPage() {
         </select>
         <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1">
           <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
-          {t('Partenaires qualifies', 'Qualified partners')}
+          {t('Partenaires qualifiés', 'Qualified partners')}
         </label>
       </div>
 
@@ -55,7 +55,7 @@ export default function DropshippersPage() {
                   <div key={product.id} className="rounded-lg border p-3 text-sm">
                     <p className="font-semibold">{product.name}</p>
                     <p className="text-slate-600">{formatPrice(product.price)} - {product.category}</p>
-                    <p className="text-xs text-slate-500">{t('A proposer aux vendeurs pour', 'Can be offered to vendors for')} {product.problemTag}</p>
+                    <p className="text-xs text-slate-500">{t('À proposer aux vendeurs pour', 'Can be offered to vendors for')} {product.problemTag}</p>
                   </div>
                 ))}
               </div>

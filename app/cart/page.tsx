@@ -56,7 +56,7 @@ export default function CartPage() {
               <a href="/checkout" className="mt-4 block rounded-xl bg-dark px-4 py-2 text-center font-semibold text-white">{t('Passer au paiement', 'Proceed to checkout')}</a>
             ) : (
               <button disabled className="mt-4 block w-full rounded-xl bg-slate-300 px-4 py-2 text-center font-semibold text-slate-600">
-                {t('Commande reservee aux comptes clients', 'Ordering is reserved for client accounts')}
+                {t('Commande réservée aux comptes clients', 'Ordering is reserved for client accounts')}
               </button>
             )}
           </aside>

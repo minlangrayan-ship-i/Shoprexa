@@ -20,10 +20,10 @@ export default function SellerProfilePage() {
           <p><span className="font-semibold">{t('Boutique', 'Store')}:</span> {seller?.company ?? '-'}</p>
           <p><span className="font-semibold">{t('Nom', 'Name')}:</span> {seller?.name ?? '-'}</p>
           <p><span className="font-semibold">{t('Email', 'Email')}:</span> {seller?.email ?? '-'}</p>
-          <p><span className="font-semibold">{t('Telephone', 'Phone')}:</span> {seller?.phone ?? '-'}</p>
+          <p><span className="font-semibold">{t('Téléphone', 'Phone')}:</span> {seller?.phone ?? '-'}</p>
           <p><span className="font-semibold">{t('Ville/Pays', 'City/Country')}:</span> {seller?.city}, {seller?.country}</p>
-          <p><span className="font-semibold">{t('Badge', 'Badge')}:</span> {trust?.hasBadge ? (trust.badgeSource === 'admin' ? t('Verifie Min-shop (provisoire)', 'Min-shop Verified (provisional)') : t('Verifie Min-shop', 'Min-shop Verified')) : t('Sans badge', 'No badge')}</p>
-          <p><span className="font-semibold">{t('Clients satisfaits', 'Satisfied clients')}:</span> {(trust?.satisfiedClients ?? 0) > 0 ? trust?.satisfiedClients : t('Donnees en cours', 'Data in progress')}</p>
+          <p><span className="font-semibold">{t('Badge', 'Badge')}:</span> {trust?.hasBadge ? (trust.badgeSource === 'admin' ? t('Vérifié Min-shop (provisoire)', 'Min-shop Verified (provisional)') : t('Vérifié Min-shop', 'Min-shop Verified')) : t('Sans badge', 'No badge')}</p>
+          <p><span className="font-semibold">{t('Clients satisfaits', 'Satisfied clients')}:</span> {(trust?.satisfiedClients ?? 0) > 0 ? trust?.satisfiedClients : t('Données en cours', 'Data in progress')}</p>
           <p><span className="font-semibold">{t('Satisfaction', 'Satisfaction')}:</span> {trust?.satisfactionRate ?? 0}%</p>
           <p className="mt-2 text-slate-600">{seller?.about}</p>
 

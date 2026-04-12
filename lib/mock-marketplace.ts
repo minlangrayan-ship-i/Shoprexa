@@ -99,6 +99,7 @@ export type RecruitmentOffer = {
   companySellerId: string;
   targetSellerId: string;
   productIds: string[];
+  commissionRate: number;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 };
@@ -858,6 +859,7 @@ export const seededRecruitmentOffers: RecruitmentOffer[] = [
     companySellerId: 'seller-2',
     targetSellerId: 'seller-3',
     productIds: ['prod-5', 'prod-6', 'prod-18'],
+    commissionRate: 12,
     status: 'pending',
     createdAt: '2026-04-09'
   }
@@ -970,6 +972,63 @@ export function getAverageRating(reviews: SellerReview[], sellerId: string) {
   if (sellerReviews.length === 0) return 0;
   const total = sellerReviews.reduce((sum, review) => sum + review.rating, 0);
   return Number((total / sellerReviews.length).toFixed(1));
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function hashToUnit(input: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) % 10000) / 10000;
+}
+
+type DemandRegion = 'city' | 'country';
+
+export function getRegionalDemandAdjustedRating(
+  product: Pick<MarketplaceProduct, 'id' | 'categorySlug' | 'averageRating'>,
+  users: DemoUser[],
+  country: string,
+  city?: string,
+  region: DemandRegion = 'country'
+) {
+  const regionalClients = users.filter((user) => {
+    if (user.role !== 'client') return false;
+    if (user.country !== country) return false;
+    if (region === 'city' && city && user.city !== city) return false;
+    return true;
+  });
+
+  if (regionalClients.length === 0) {
+    return Number(product.averageRating.toFixed(1));
+  }
+
+  const preferenceCounter = regionalClients.reduce(
+    (acc, client) => {
+      const prefs = client.preferences ?? [];
+      acc.total += prefs.length;
+      if (prefs.includes(product.categorySlug)) acc.match += 1;
+      return acc;
+    },
+    { total: 0, match: 0 }
+  );
+
+  const baselineShare = 1 / marketplaceCategories.length;
+  const demandShare = preferenceCounter.total === 0 ? baselineShare : preferenceCounter.match / preferenceCounter.total;
+  const normalizedDemand = clamp(demandShare / baselineShare, 0, 2);
+  const demandDelta = (normalizedDemand - 1) * 0.45;
+
+  const seed = `${product.id}|${country}|${city ?? 'all'}|${region}`;
+  const probabilityRoll = hashToUnit(`${seed}|probability`);
+  const noiseRoll = hashToUnit(`${seed}|noise`);
+  const probabilisticDelta = probabilityRoll < 0.18 ? (noiseRoll - 0.5) * 0.3 : 0;
+
+  const rating = clamp(product.averageRating + demandDelta + probabilisticDelta, 3.0, 5.0);
+  return Number(rating.toFixed(1));
 }
 
 export function getSellerProducts(products: MarketplaceProduct[], sellerId: string) {

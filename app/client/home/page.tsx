@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ProductCard } from '@/components/product-card';
-import { rankSellersByRating } from '@/lib/mock-marketplace';
+import { getRegionalDemandAdjustedRating, rankSellersByRating } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function ClientHomePage() {
-  const { sessionUser, country, city, products, sellers, reviews, testimonials, t } = useSite();
+  const { sessionUser, country, city, products, sellers, reviews, testimonials, users, t } = useSite();
 
   const localProducts = useMemo(() => {
     return products
@@ -30,12 +30,12 @@ export default function ClientHomePage() {
           city: product.sellerCity
         },
         badges: product.badges,
-        averageRating: product.averageRating,
+        averageRating: getRegionalDemandAdjustedRating(product, users, country, city, 'city'),
         kind: product.kind,
         serviceDuration: product.serviceDuration,
         serviceAvailability: product.serviceAvailability
       }));
-  }, [city, country, products]);
+  }, [city, country, products, users]);
 
   const preferenceProducts = useMemo(() => {
     const preferred = sessionUser?.preferences ?? [];
@@ -56,8 +56,8 @@ export default function ClientHomePage() {
       <section className="section py-12">
         <div className="card p-6">
           <h1 className="text-2xl font-bold">{t('Espace client', 'Client area')}</h1>
-          <p className="mt-2 text-slate-600">{t('Connecte-toi avec un compte client pour voir ta homepage personnalisee.', 'Please login with a client account to view your personalized homepage.')}</p>
-          <Link href="/auth/login" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 text-white">{t('Aller a la connexion', 'Go to login')}</Link>
+          <p className="mt-2 text-slate-600">{t('Connecte-toi avec un compte client pour voir ta homepage personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
+          <Link href="/auth/login" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 text-white">{t('Aller à la connexion', 'Go to login')}</Link>
         </div>
       </section>
     );
@@ -66,7 +66,7 @@ export default function ClientHomePage() {
   return (
     <section className="section py-12">
       <div className="card bg-gradient-to-r from-brand-600 to-dark p-6 text-white">
-        <p className="text-sm uppercase opacity-80">{t('Homepage personnalisee', 'Personalized homepage')}</p>
+        <p className="text-sm uppercase opacity-80">{t('Homepage personnalisée', 'Personalized homepage')}</p>
         <h1 className="mt-2 text-3xl font-bold">{t('Bonjour', 'Hello')} {sessionUser.name}</h1>
         <p className="mt-2 text-sm opacity-90">{t('Nous te montrons les meilleurs produits pour', 'We are showing the best products for')} {city}, {country}.</p>
       </div>
@@ -78,11 +78,11 @@ export default function ClientHomePage() {
       </div>
 
       <div className="mt-10">
-        <h2 className="text-2xl font-bold">{t('Produits recommandes selon vos preferences', 'Recommended products from your preferences')}</h2>
+        <h2 className="text-2xl font-bold">{t('Produits recommandés selon vos préférences', 'Recommended products from your preferences')}</h2>
         <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{preferenceProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         <p className="mt-3 text-xs text-slate-500">
           {t(
-            'Suggestion anonyme: des clients au profil proche du votre ont aussi achete des produits Energie et Securite cette semaine.',
+            'Suggestion anonyme: des clients au profil proche du vôtre ont aussi acheté des produits Énergie et Sécurité cette semaine.',
             'Anonymous hint: customers with a similar profile also bought Energy and Security products this week.'
           )}
         </p>
@@ -101,7 +101,7 @@ export default function ClientHomePage() {
       </div>
 
       <div className="mt-10 rounded-xl border bg-white p-5">
-        <h3 className="text-lg font-bold">{t('Temoignages clients de votre region', 'Testimonials from your region')}</h3>
+        <h3 className="text-lg font-bold">{t('Témoignages clients de votre région', 'Testimonials from your region')}</h3>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           {(regionalTestimonials.length > 0
             ? regionalTestimonials.map((item) => ({

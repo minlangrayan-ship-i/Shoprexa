@@ -87,7 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
             onClick={() => setPreview(true)}
             className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white"
           >
-            <Eye size={13} /> {t('Apercu', 'Preview')}
+            <Eye size={13} /> {t('Aperçu', 'Preview')}
           </button>
         </div>
 
@@ -127,8 +127,8 @@ export function ProductCard({ product }: { product: Product }) {
               </p>
             ) : null}
             {product.seller ? <p>{product.seller.city}, {product.seller.country}</p> : null}
-            {product.kind === 'service' && product.serviceDuration ? <p>{t('Duree', 'Duration')}: {product.serviceDuration}</p> : null}
-            {product.kind === 'service' && product.serviceAvailability ? <p>{t('Disponibilite', 'Availability')}: {product.serviceAvailability}</p> : null}
+            {product.kind === 'service' && product.serviceDuration ? <p>{t('Durée', 'Duration')}: {product.serviceDuration}</p> : null}
+            {product.kind === 'service' && product.serviceAvailability ? <p>{t('Disponibilité', 'Availability')}: {product.serviceAvailability}</p> : null}
           </div>
 
           <button onClick={addToCart} className="w-full rounded-xl bg-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
@@ -149,7 +149,7 @@ export function ProductCard({ product }: { product: Product }) {
             <div className="mt-3 flex items-center justify-between">
               <p className="font-bold text-brand-700">{formatPrice(product.price, country)}</p>
               <Link href={`/product/${product.slug}`} className="rounded-lg bg-dark px-3 py-2 text-xs font-semibold text-white">
-                {t('Voir la fiche complete', 'View full details')}
+                {t('Voir la fiche complète', 'View full details')}
               </Link>
             </div>
           </div>

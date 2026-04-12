@@ -33,7 +33,7 @@ export default function LoginPage() {
     <section className="section py-14">
       <div className="mx-auto max-w-md rounded-2xl border bg-white p-7 shadow-sm">
         <h1 className="text-3xl font-bold">{t('Connexion', 'Login')}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t('Connecte-toi pour acceder a ton espace.', 'Sign in to access your workspace.')}</p>
+        <p className="mt-2 text-sm text-slate-600">{t('Connecte-toi pour accéder à ton espace.', 'Sign in to access your workspace.')}</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
           <input required type="email" name="email" placeholder="Email" className="w-full rounded-xl border px-3 py-2" />
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
         <p className="mt-5 text-sm text-slate-600">
           {t('Pas encore de compte ?', 'No account yet?')}{' '}
-          <a href="/auth/register" className="font-semibold text-brand-700">{t('Creer un compte', 'Create one')}</a>
+          <a href="/auth/register" className="font-semibold text-brand-700">{t('Créer un compte', 'Create one')}</a>
         </p>
       </div>
     </section>

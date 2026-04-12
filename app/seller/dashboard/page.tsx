@@ -6,7 +6,7 @@ import { useSite } from '@/components/site-context';
 import { formatPrice } from '@/lib/utils';
 
 export default function SellerDashboardPage() {
-  const { sessionUser, sellers, products, orders, recruitmentOffers, companySendRecruitmentOffer, respondRecruitmentOffer, t } = useSite();
+  const { sessionUser, sellers, products, orders, recruitmentOffers, companySendRecruitmentOffer, respondRecruitmentOffer, addCompanyReviewForPartner, t } = useSite();
   const [status, setStatus] = useState('');
 
   const sellerId = sessionUser?.sellerId;
@@ -33,8 +33,21 @@ export default function SellerDashboardPage() {
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean);
+    const commissionRate = Number(formData.get('commissionRate'));
 
-    const result = companySendRecruitmentOffer(targetSellerId, productIds);
+    const result = companySendRecruitmentOffer(targetSellerId, productIds, commissionRate);
+    setStatus(result.message);
+    if (result.ok) event.currentTarget.reset();
+  };
+
+  const onCompanyReview = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = addCompanyReviewForPartner({
+      targetSellerId: String(formData.get('targetSellerId')),
+      rating: Number(formData.get('rating')),
+      comment: String(formData.get('comment'))
+    });
     setStatus(result.message);
     if (result.ok) event.currentTarget.reset();
   };
@@ -46,6 +59,9 @@ export default function SellerDashboardPage() {
         company: sellers.find((entry) => entry.id === offer.companySellerId)
       })),
     [incomingOffers, sellers]
+  );
+  const acceptedPartners = recruitmentOffers.filter(
+    (offer) => offer.companySellerId === sellerId && offer.status === 'accepted'
   );
 
   return (
@@ -74,21 +90,50 @@ export default function SellerDashboardPage() {
               </select>
               <input
                 name="productIds"
-                placeholder={t('IDs produits a proposer (ex: prod-5,prod-6)', 'Product IDs to propose (ex: prod-5,prod-6)')}
+                placeholder={t('IDs produits à proposer (ex: prod-5,prod-6)', 'Product IDs to propose (ex: prod-5,prod-6)')}
                 className="rounded-lg border px-3 py-2"
                 defaultValue={companyProducts.slice(0, 2).map((entry) => entry.id).join(',')}
               />
-              <button className="rounded-lg bg-dark px-4 py-2 text-sm font-semibold text-white md:col-span-2">{t('Envoyer offre', 'Send offer')}</button>
+              <input
+                name="commissionRate"
+                type="number"
+                min="1"
+                max="100"
+                defaultValue={12}
+                placeholder={t('Commission % (ex: 12)', 'Commission % (ex: 12)')}
+                className="rounded-lg border px-3 py-2"
+              />
+              <button className="rounded-lg bg-dark px-4 py-2 text-sm font-semibold text-white md:col-span-2">{t('Envoyer une offre', 'Send offer')}</button>
+            </form>
+
+            <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs">
+              <p className="font-semibold">{t('Accord de partenariat', 'Partnership agreement')}</p>
+              <p>{t('La commission sur chaque vente du produit entreprise vendue par dropshipper suit le taux indiqué dans l’offre acceptée.', 'Commission on each company product sale made by the dropshipper follows the rate set in the accepted offer.')}</p>
+            </div>
+
+            <form onSubmit={onCompanyReview} className="mt-4 grid gap-3 md:grid-cols-3">
+              <select name="targetSellerId" className="rounded-lg border px-3 py-2">
+                {acceptedPartners.map((offer) => {
+                  const partner = sellers.find((entry) => entry.id === offer.targetSellerId);
+                  return <option key={offer.id} value={offer.targetSellerId}>{partner?.company ?? offer.targetSellerId}</option>;
+                })}
+              </select>
+              <select name="rating" className="rounded-lg border px-3 py-2">
+                {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value}/5</option>)}
+              </select>
+              <input name="comment" className="rounded-lg border px-3 py-2 md:col-span-3" placeholder={t('Commentaire entreprise sur le dropshipper', 'Company comment on dropshipper')} />
+              <button className="rounded-lg bg-dark px-4 py-2 text-sm font-semibold text-white md:col-span-3">{t('Noter le partenaire dropshipper', 'Review dropshipper partner')}</button>
             </form>
           </div>
         ) : (
           <div className="rounded-xl border bg-white p-4">
-            <h2 className="font-semibold">{t('Offres de collaboration recues', 'Received collaboration offers')}</h2>
+            <h2 className="font-semibold">{t('Offres de collaboration reçues', 'Received collaboration offers')}</h2>
             <div className="mt-3 space-y-2 text-sm">
               {offersWithCompanies.map((offer) => (
                 <div key={offer.id} className="rounded-lg border p-3">
                   <p className="font-semibold">{t('Entreprise', 'Company')}: {offer.company?.company ?? offer.companySellerId}</p>
-                  <p>{t('Produits proposes', 'Proposed products')}: {offer.productIds.join(', ')}</p>
+                  <p>{t('Produits proposés', 'Proposed products')}: {offer.productIds.join(', ')}</p>
+                  <p>{t('Commission accord', 'Agreed commission')}: {offer.commissionRate}%</p>
                   <div className="mt-2 flex gap-2">
                     <button onClick={() => setStatus(respondRecruitmentOffer(offer.id, 'accepted').message)} className="rounded border px-3 py-1 text-xs text-emerald-700">{t('Accepter', 'Accept')}</button>
                     <button onClick={() => setStatus(respondRecruitmentOffer(offer.id, 'rejected').message)} className="rounded border px-3 py-1 text-xs text-red-600">{t('Refuser', 'Reject')}</button>

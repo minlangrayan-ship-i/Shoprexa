@@ -1,16 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProductCard } from '@/components/product-card';
-import { marketplaceCategories } from '@/lib/mock-marketplace';
+import { RecommendationStrip } from '@/features/recommendations/components/recommendation-strip';
+import { getRegionalDemandAdjustedRating, marketplaceCategories } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
+import type { RecommendationBlock } from '@/types/marketplace-ai';
 
 export default function ShopPage() {
-  const { country, city, products, t } = useSite();
+  const { locale, country, city, products, users, t } = useSite();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [offerType, setOfferType] = useState<'all' | 'product' | 'service'>('all');
   const [sort, setSort] = useState<'popular' | 'price_asc' | 'price_desc' | 'rating'>('popular');
+  const [recommendationBlocks, setRecommendationBlocks] = useState<RecommendationBlock[]>([]);
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => product.sellerCountry === country && product.sellerCity === city);
@@ -32,15 +35,21 @@ export default function ShopPage() {
     if (category) result = result.filter((product) => product.categorySlug === category);
     if (offerType !== 'all') result = result.filter((product) => (product.kind ?? 'product') === offerType);
 
-    if (sort === 'price_asc') result = [...result].sort((a, b) => a.price - b.price);
-    if (sort === 'price_desc') result = [...result].sort((a, b) => b.price - a.price);
-    if (sort === 'popular') result = [...result].sort((a, b) => b.viewCount - a.viewCount);
-    if (sort === 'rating') result = [...result].sort((a, b) => b.averageRating - a.averageRating);
+    const withDemandRatings = result.map((product) => ({
+      ...product,
+      demandRating: getRegionalDemandAdjustedRating(product, users, country, city, 'city')
+    }));
 
-    return result.map((product) => ({
+    if (sort === 'price_asc') withDemandRatings.sort((a, b) => a.price - b.price);
+    if (sort === 'price_desc') withDemandRatings.sort((a, b) => b.price - a.price);
+    if (sort === 'popular') withDemandRatings.sort((a, b) => b.viewCount - a.viewCount);
+    if (sort === 'rating') withDemandRatings.sort((a, b) => b.demandRating - a.demandRating);
+
+    return withDemandRatings.map((product) => ({
       id: product.id,
       slug: product.slug,
       name: product.name,
+      categorySlug: product.categorySlug,
       description: product.description,
       price: product.price,
       oldPrice: product.oldPrice,
@@ -54,19 +63,44 @@ export default function ShopPage() {
         city: product.sellerCity
       },
         badges: product.badges,
-        averageRating: product.averageRating,
+        averageRating: product.demandRating,
         kind: product.kind,
         serviceDuration: product.serviceDuration,
         serviceAvailability: product.serviceAvailability
       }));
-  }, [category, city, country, offerType, products, query, sort]);
+  }, [category, city, country, offerType, products, query, sort, users]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!filteredProducts[0]) return;
+      try {
+        const res = await fetch('/api/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            locale,
+            country,
+            city,
+            productId: filteredProducts[0].id,
+            viewedCategorySlug: filteredProducts[0].categorySlug
+          })
+        });
+        if (!res.ok) return;
+        const payload = (await res.json()) as { blocks: RecommendationBlock[] };
+        setRecommendationBlocks(payload.blocks);
+      } catch {
+        setRecommendationBlocks([]);
+      }
+    };
+    void run();
+  }, [city, country, filteredProducts, locale]);
 
   return (
     <section className="section py-10">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">{t('Catalogue produits', 'Product catalog')}</h1>
-          <p className="text-sm text-slate-600">{t('Affichage optimise pour', 'Optimized listing for')} {city}, {country}</p>
+          <p className="text-sm text-slate-600">{t('Affichage optimisé pour', 'Optimized listing for')} {city}, {country}</p>
         </div>
       </div>
 
@@ -79,7 +113,7 @@ export default function ShopPage() {
         />
 
         <select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-lg border px-3 py-2">
-          <option value="">{t('Toutes categories', 'All categories')}</option>
+          <option value="">{t('Toutes catégories', 'All categories')}</option>
           {marketplaceCategories.map((item) => (
             <option key={item.slug} value={item.slug}>{item.label}</option>
           ))}
@@ -87,9 +121,9 @@ export default function ShopPage() {
 
         <select value={sort} onChange={(event) => setSort(event.target.value as 'popular' | 'price_asc' | 'price_desc' | 'rating')} className="rounded-lg border px-3 py-2">
           <option value="popular">{t('Populaires', 'Most viewed')}</option>
-          <option value="rating">{t('Mieux notes', 'Top rated')}</option>
+          <option value="rating">{t('Mieux notés', 'Top rated')}</option>
           <option value="price_asc">{t('Prix croissant', 'Price low to high')}</option>
-          <option value="price_desc">{t('Prix decroissant', 'Price high to low')}</option>
+          <option value="price_desc">{t('Prix décroissant', 'Price high to low')}</option>
         </select>
 
         <select value={offerType} onChange={(event) => setOfferType(event.target.value as 'all' | 'product' | 'service')} className="rounded-lg border px-3 py-2">
@@ -106,11 +140,16 @@ export default function ShopPage() {
           {t('Aucun produit pour cette zone. Essaie une autre ville via la navbar.', 'No products for this location yet. Try another city in the navbar.')}
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+        <>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          {recommendationBlocks.map((block) => (
+            <RecommendationStrip key={block.key} block={block} country={country} />
           ))}
-        </div>
+        </>
       )}
     </section>
   );

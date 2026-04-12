@@ -7,7 +7,7 @@ const schema = z.object({ email: z.string().email(), password: z.string().min(6)
 export async function POST(req: Request) {
   const body = schema.safeParse(await req.json());
   if (!body.success) {
-    return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 });
+    return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
   }
 
   const user = findUserByCredentials(demoUsers, body.data.email, body.data.password);

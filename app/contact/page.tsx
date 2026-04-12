@@ -14,7 +14,7 @@ export default function ContactPage() {
     const formData = new FormData(event.currentTarget);
     const payload = Object.fromEntries(formData.entries());
     const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setStatus(res.ok ? t('Message envoye avec succes.', 'Message sent successfully.') : t('Erreur, veuillez reessayer.', 'Error, please try again.'));
+    setStatus(res.ok ? t('Message envoyé avec succès.', 'Message sent successfully.') : t('Erreur, veuillez réessayer.', 'Error, please try again.'));
     if (res.ok) event.currentTarget.reset();
   };
 
@@ -25,7 +25,7 @@ export default function ContactPage() {
         <form onSubmit={onSubmit} className="card space-y-3 p-6">
           <input required name="name" placeholder={t('Nom', 'Name')} className="w-full rounded-lg border px-3 py-2" />
           <input required type="email" name="email" placeholder="Email" className="w-full rounded-lg border px-3 py-2" />
-          <input name="phone" placeholder={t('Telephone', 'Phone')} className="w-full rounded-lg border px-3 py-2" />
+          <input name="phone" placeholder={t('Téléphone', 'Phone')} className="w-full rounded-lg border px-3 py-2" />
           <input required name="subject" placeholder={t('Sujet', 'Subject')} className="w-full rounded-lg border px-3 py-2" />
           <textarea required name="message" placeholder={t('Votre message', 'Your message')} className="h-28 w-full rounded-lg border px-3 py-2" />
           <button className="rounded-xl bg-dark px-4 py-2 font-semibold text-white">{t('Envoyer', 'Send')}</button>
@@ -45,7 +45,7 @@ export default function ContactPage() {
           </div>
           <div>
             <p className="font-semibold">Adresse</p>
-            <p>Base a Yaounde, Cameroun</p>
+            <p>Basé à Yaoundé, Cameroun</p>
           </div>
         </div>
       </div>
