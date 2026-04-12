@@ -9,6 +9,9 @@ import { useSite } from '@/components/site-context';
 export function Navbar() {
   const [count, setCount] = useState(0);
   const { locale, setLocale, country, city, setCountry, setCity, availableCities, sessionUser, logout, t } = useSite();
+  const canAccessDropshipperTab =
+    sessionUser?.role === 'admin' ||
+    (sessionUser?.role === 'seller' && sessionUser.sellerType === 'dropshipper');
 
   useEffect(() => {
     const sync = () => {
@@ -51,7 +54,7 @@ export function Navbar() {
           <Link href="/shop">{t('Catalogue', 'Catalog')}</Link>
           <Link href="/assistant">{t('Assistant IA', 'AI assistant')}</Link>
           <Link href="/sellers">{t('Vendeurs', 'Sellers')}</Link>
-          <Link href="/dropshippers">{t('Dropshippers', 'Dropshippers')}</Link>
+          {canAccessDropshipperTab ? <Link href="/dropshippers">{t('Dropshippers', 'Dropshippers')}</Link> : null}
           <Link href="/about">{t('À propos', 'About')}</Link>
 
           <Link href="/cart" className="relative">
@@ -61,6 +64,11 @@ export function Navbar() {
 
           {sessionUser ? (
             <>
+              {sessionUser.role === 'client' ? (
+                <Link href="/client/home" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
+                  {t('Accueil client', 'Client home')}
+                </Link>
+              ) : null}
               <Link href="/profile" className="rounded-full border px-3 py-1.5 text-xs font-semibold">{t('Profil', 'Profile')}</Link>
               {sessionUser.role === 'seller' ? <Link href="/seller/dashboard" className="rounded-full border px-3 py-1.5 text-xs font-semibold">{t('Espace vendeur', 'Seller area')}</Link> : null}
               {sessionUser.role === 'admin' ? <Link href="/admin" className="rounded-full border px-3 py-1.5 text-xs font-semibold">Admin</Link> : null}

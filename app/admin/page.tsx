@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { getSellerTrustStats } from '@/lib/mock-marketplace';
+import { getSellerTrustStats, marketplaceCategories } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 import { verifyProductConsistency } from '@/services/verification/product-consistency';
@@ -326,12 +326,11 @@ export default function AdminPage() {
               </select>
               <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="rounded-lg border px-3 py-2">
                 <option value="">{t('Toutes catégories', 'All categories')}</option>
-                <option value="energie">Énergie</option>
-                <option value="cuisine">Cuisine</option>
-                <option value="securite">Sécurité</option>
-                <option value="mobilite">Mobilité</option>
-                <option value="fitness">Fitness</option>
-                <option value="organisation">Organisation</option>
+                {marketplaceCategories.map((category) => (
+                  <option key={category.slug} value={category.slug}>
+                    {category.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="mt-3 grid gap-3 md:grid-cols-3">
@@ -473,12 +472,11 @@ export default function AdminPage() {
               <input required name="price" type="number" min="1" placeholder={t('Prix', 'Price')} className="rounded-lg border px-3 py-2" />
               <input required name="stock" type="number" min="0" placeholder={t('Stock', 'Stock')} className="rounded-lg border px-3 py-2" />
               <select name="categorySlug" className="rounded-lg border px-3 py-2">
-                <option value="energie">energie</option>
-                <option value="cuisine">cuisine</option>
-                <option value="securite">securite</option>
-                <option value="mobilite">mobilite</option>
-                <option value="fitness">fitness</option>
-                <option value="organisation">organisation</option>
+                {marketplaceCategories.map((category) => (
+                  <option key={category.slug} value={category.slug}>
+                    {category.label}
+                  </option>
+                ))}
               </select>
               <select name="kind" className="rounded-lg border px-3 py-2">
                 <option value="product">{t('Produit', 'Product')}</option>

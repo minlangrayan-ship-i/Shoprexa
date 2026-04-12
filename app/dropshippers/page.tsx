@@ -6,9 +6,20 @@ import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
 export default function DropshippersPage() {
-  const { country, t } = useSite();
+  const {
+    country,
+    sessionUser,
+    dropshipperCatalogProposals,
+    proposeDropshipperCatalog,
+    t
+  } = useSite();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [zone, setZone] = useState<'all' | 'country'>('all');
+  const [status, setStatus] = useState('');
+
+  const canAccess =
+    sessionUser?.role === 'admin' ||
+    (sessionUser?.role === 'seller' && sessionUser.sellerType === 'dropshipper');
 
   const filtered = useMemo(
     () =>
@@ -19,6 +30,22 @@ export default function DropshippersPage() {
       }),
     [country, verifiedOnly, zone]
   );
+
+  if (!canAccess) {
+    return (
+      <section className="section py-12">
+        <div className="card p-6">
+          <h1 className="text-2xl font-bold">{t('Acces reserve', 'Restricted access')}</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            {t(
+              'Cet onglet est reserve aux comptes dropshipper et a l admin.',
+              'This tab is restricted to dropshipper accounts and admin.'
+            )}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="section py-12">
@@ -60,13 +87,47 @@ export default function DropshippersPage() {
                 ))}
               </div>
 
-              <button className="mt-4 w-full rounded-lg bg-dark px-4 py-2 text-sm font-semibold text-white">
+              <button
+                onClick={() => {
+                  const result = proposeDropshipperCatalog({
+                    dropshipperId: dropshipper.id,
+                    dropshipperName: dropshipper.name,
+                    productIds: products.map((product) => product.id)
+                  });
+                  setStatus(`${dropshipper.name}: ${result.message}`);
+                }}
+                className="mt-4 w-full rounded-lg bg-dark px-4 py-2 text-sm font-semibold text-white"
+              >
                 {t('Proposer ce catalogue aux vendeurs', 'Share this catalog with vendors')}
               </button>
             </article>
           );
         })}
       </div>
+
+      {status ? <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-sm">{status}</p> : null}
+
+      {sessionUser?.role === 'admin' ? (
+        <div className="mt-8 rounded-xl border bg-white p-5">
+          <h2 className="text-lg font-bold">{t('Vue ensemble admin', 'Admin overview')}</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {dropshipperCatalogProposals.length} {t('proposition(s) de catalogue enregistree(s).', 'catalog proposal(s) recorded.')}
+          </p>
+          <div className="mt-3 space-y-2 text-sm">
+            {dropshipperCatalogProposals.slice(0, 8).map((proposal) => (
+              <div key={proposal.id} className="rounded-lg border p-3">
+                <p className="font-semibold">{proposal.dropshipperName}</p>
+                <p className="text-slate-600">
+                  {proposal.productIds.length} {t('produit(s) propose(s)', 'product(s) proposed')} - {proposal.createdAt}
+                </p>
+              </div>
+            ))}
+            {dropshipperCatalogProposals.length === 0 ? (
+              <p className="text-slate-500">{t('Aucune proposition pour le moment.', 'No proposals yet.')}</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

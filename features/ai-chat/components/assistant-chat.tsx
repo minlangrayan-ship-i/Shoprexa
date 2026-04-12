@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { AssistantMessage, ChatAssistantOutput, Locale } from '@/types/marketplace-ai';
 import { formatPrice } from '@/lib/utils';
@@ -9,17 +9,52 @@ type Props = {
   locale: Locale;
   country: string;
   city: string;
+  isGuest: boolean;
 };
 
-export function AssistantChat({ locale, country, city }: Props) {
+const GUEST_STORAGE_KEY = 'ai_guest_message_count';
+const GUEST_MESSAGE_LIMIT = 5;
+
+export function AssistantChat({ locale, country, city, isGuest }: Props) {
   const [history, setHistory] = useState<AssistantMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastReply, setLastReply] = useState<ChatAssistantOutput | null>(null);
+  const [guestCount, setGuestCount] = useState(0);
+
+  useEffect(() => {
+    if (!isGuest) {
+      setGuestCount(0);
+      return;
+    }
+
+    const raw = localStorage.getItem(GUEST_STORAGE_KEY);
+    const parsed = Number(raw);
+    const normalized = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, GUEST_MESSAGE_LIMIT) : 0;
+    setGuestCount(normalized);
+  }, [isGuest]);
+
+  const persistGuestCount = (value: number) => {
+    setGuestCount(value);
+    localStorage.setItem(GUEST_STORAGE_KEY, String(value));
+  };
+
+  const guestLimitReached = isGuest && guestCount >= GUEST_MESSAGE_LIMIT;
+  const remainingGuestMessages = useMemo(() => Math.max(0, GUEST_MESSAGE_LIMIT - guestCount), [guestCount]);
 
   const onSend = async () => {
     if (!input.trim()) return;
+
+    if (guestLimitReached) {
+      setError(
+        locale === 'fr'
+          ? 'Limite invitée atteinte (5 messages). Connecte-toi pour continuer.'
+          : 'Guest limit reached (5 messages). Please sign in to continue.'
+      );
+      return;
+    }
+
     const userMessage: AssistantMessage = { role: 'user', content: input.trim() };
     const nextHistory = [...history, userMessage];
 
@@ -37,9 +72,27 @@ export function AssistantChat({ locale, country, city }: Props) {
           locale,
           country,
           city,
-          history: nextHistory
+          history: nextHistory,
+          isGuest
         })
       });
+
+      if (isGuest) {
+        persistGuestCount(Math.min(GUEST_MESSAGE_LIMIT, guestCount + 1));
+      }
+
+      if (res.status === 429) {
+        if (isGuest) persistGuestCount(GUEST_MESSAGE_LIMIT);
+        const limitedMessage =
+          locale === 'fr'
+            ? 'Limite invitée atteinte (5 messages). Crée un compte pour continuer.'
+            : 'Guest limit reached (5 messages). Create an account to continue.';
+
+        setError(limitedMessage);
+        setHistory((current) => [...current, { role: 'assistant', content: limitedMessage }]);
+        return;
+      }
+
       if (!res.ok) throw new Error('chat_error');
 
       const payload = (await res.json()) as ChatAssistantOutput;
@@ -64,6 +117,13 @@ export function AssistantChat({ locale, country, city }: Props) {
               ? 'Pose une question produit, livraison, paiement ou comparaison.'
               : 'Ask about products, delivery, payments, or comparisons.'}
           </p>
+          {isGuest ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {locale === 'fr'
+                ? `Mode invité: ${remainingGuestMessages} message(s) restant(s) sur ${GUEST_MESSAGE_LIMIT}.`
+                : `Guest mode: ${remainingGuestMessages} message(s) left out of ${GUEST_MESSAGE_LIMIT}.`}
+            </p>
+          ) : null}
 
           <div className="mt-4 h-[380px] overflow-y-auto rounded-xl border bg-slate-50 p-3">
             {history.length === 0 ? (
@@ -95,12 +155,21 @@ export function AssistantChat({ locale, country, city }: Props) {
               }}
               placeholder={locale === 'fr' ? 'Ecris ta question...' : 'Write your question...'}
               className="flex-1 rounded-xl border px-3 py-2"
+              disabled={loading || guestLimitReached}
             />
-            <button onClick={() => void onSend()} disabled={loading} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white disabled:opacity-60">
+            <button onClick={() => void onSend()} disabled={loading || guestLimitReached} className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white disabled:opacity-60">
               {loading ? (locale === 'fr' ? 'Envoi...' : 'Sending...') : locale === 'fr' ? 'Envoyer' : 'Send'}
             </button>
           </div>
           {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+          {guestLimitReached ? (
+            <p className="mt-2 text-sm text-slate-700">
+              {locale === 'fr' ? 'Passe en compte client pour un accès illimité à l’assistant.' : 'Switch to a client account for unlimited assistant access.'}{' '}
+              <Link href="/auth/register" className="font-semibold text-brand-700 underline">
+                {locale === 'fr' ? 'Créer un compte' : 'Create account'}
+              </Link>
+            </p>
+          ) : null}
         </div>
 
         <aside className="rounded-2xl border bg-white p-5 shadow-sm">

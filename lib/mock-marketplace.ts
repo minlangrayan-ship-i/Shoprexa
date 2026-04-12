@@ -151,7 +151,11 @@ export const marketplaceCategories = [
   { label: 'Securite', slug: 'securite' },
   { label: 'Mobilite', slug: 'mobilite' },
   { label: 'Fitness', slug: 'fitness' },
-  { label: 'Organisation', slug: 'organisation' }
+  { label: 'Organisation', slug: 'organisation' },
+  { label: 'Sante', slug: 'sante' },
+  { label: 'Education', slug: 'education' },
+  { label: 'Agriculture', slug: 'agriculture' },
+  { label: 'Maison', slug: 'maison' }
 ];
 
 const coreSellerProfiles: MarketplaceSeller[] = [

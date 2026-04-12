@@ -17,6 +17,7 @@ export default function ClientHomePage() {
         id: product.id,
         slug: product.slug,
         name: product.name,
+        categorySlug: product.categorySlug,
         description: product.description,
         price: product.price,
         oldPrice: product.oldPrice,
@@ -40,7 +41,7 @@ export default function ClientHomePage() {
   const preferenceProducts = useMemo(() => {
     const preferred = sessionUser?.preferences ?? [];
     if (preferred.length === 0) return localProducts;
-    return localProducts.filter((product) => preferred.includes(product.category.name.toLowerCase())).slice(0, 6);
+    return localProducts.filter((product) => preferred.includes(product.categorySlug)).slice(0, 6);
   }, [localProducts, sessionUser?.preferences]);
 
   const regionalTestimonials = useMemo(

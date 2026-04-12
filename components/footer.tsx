@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useSite } from '@/components/site-context';
 
 export function Footer() {
-  const { t } = useSite();
+  const { sessionUser, t } = useSite();
+  const canAccessDropshipperTab =
+    sessionUser?.role === 'admin' ||
+    (sessionUser?.role === 'seller' && sessionUser.sellerType === 'dropshipper');
 
   return (
     <footer className="mt-20 border-t bg-dark text-slate-200">
@@ -23,7 +26,7 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-sm">
             <li><Link href="/shop">{t('Boutique', 'Shop')}</Link></li>
             <li><Link href="/sellers">{t('Vendeurs', 'Sellers')}</Link></li>
-            <li><Link href="/dropshippers">Dropshippers</Link></li>
+            {canAccessDropshipperTab ? <li><Link href="/dropshippers">Dropshippers</Link></li> : null}
           </ul>
         </div>
         <div>

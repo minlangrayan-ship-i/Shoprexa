@@ -2,7 +2,13 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { getSellerDashboardData, getSellerProducts, getSellerTrustStats, rankSellersByRating } from '@/lib/mock-marketplace';
+import {
+  getSellerDashboardData,
+  getSellerProducts,
+  getSellerTrustStats,
+  marketplaceCategories,
+  rankSellersByRating
+} from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
@@ -60,6 +66,9 @@ export default function SellersPage() {
   const dashboard = selectedSeller
     ? getSellerDashboardData(selectedSeller.id, products, reviews, orders)
     : null;
+  const canViewSensitiveSellerMetrics =
+    sessionUser?.role === 'admin' ||
+    (sessionUser?.role === 'seller' && sessionUser.sellerId === selectedSeller?.id);
 
   useEffect(() => {
     if (!selectedSellerId || !dashboardRef.current) return;
@@ -112,12 +121,11 @@ export default function SellersPage() {
           </select>
           <select value={niche} onChange={(event) => setNiche(event.target.value)} className="rounded-lg border px-2 py-1 text-xs">
             <option value="">{t('Toutes niches', 'All niches')}</option>
-            <option value="energie">Énergie</option>
-            <option value="cuisine">Cuisine</option>
-            <option value="securite">Sécurité</option>
-            <option value="mobilite">Mobilité</option>
-            <option value="fitness">Fitness</option>
-            <option value="organisation">Organisation</option>
+            {marketplaceCategories.map((category) => (
+              <option key={category.slug} value={category.slug}>
+                {category.label}
+              </option>
+            ))}
           </select>
           <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs">
             <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
@@ -200,8 +208,14 @@ export default function SellersPage() {
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Produits</p><p className="text-xl font-bold">{dashboard.products.length}</p></div>
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Stock total</p><p className="text-xl font-bold">{dashboard.totalStock}</p></div>
-            <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Commandes</p><p className="text-xl font-bold">{dashboard.orders.length}</p></div>
-            <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">CA simulé</p><p className="text-xl font-bold">{formatPrice(dashboard.revenue)}</p></div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-xs text-slate-500">Commandes</p>
+              <p className="text-xl font-bold">{canViewSensitiveSellerMetrics ? dashboard.orders.length : t('Privé', 'Private')}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-xs text-slate-500">CA simulé</p>
+              <p className="text-xl font-bold">{canViewSensitiveSellerMetrics ? formatPrice(dashboard.revenue) : t('Privé', 'Private')}</p>
+            </div>
           </div>
         </section>
       ) : null}

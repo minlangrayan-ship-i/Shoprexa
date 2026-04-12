@@ -19,7 +19,11 @@ export const complementaryCategoryMap: Record<string, string[]> = {
   securite: ['energie', 'organisation'],
   mobilite: ['fitness', 'energie'],
   fitness: ['mobilite', 'organisation'],
-  organisation: ['cuisine', 'securite']
+  organisation: ['cuisine', 'securite'],
+  sante: ['fitness', 'cuisine'],
+  education: ['organisation', 'energie'],
+  agriculture: ['maison', 'energie'],
+  maison: ['organisation', 'securite']
 };
 
 export const categoryKeywords: Record<string, string[]> = {
@@ -28,7 +32,11 @@ export const categoryKeywords: Record<string, string[]> = {
   securite: ['alarme', 'camera', 'serrure', 'securite', 'coffre', 'protection'],
   mobilite: ['scooter', 'trottinette', 'velo', 'transport', 'mobilite', 'casque'],
   fitness: ['fitness', 'sport', 'montre', 'cardio', 'entrainement'],
-  organisation: ['rangement', 'boite', 'organisation', 'bureau', 'stockage']
+  organisation: ['rangement', 'boite', 'organisation', 'bureau', 'stockage'],
+  sante: ['sante', 'hygiene', 'bien-etre', 'soin', 'pharmacie'],
+  education: ['education', 'ecole', 'eleve', 'etudiant', 'apprentissage'],
+  agriculture: ['agriculture', 'ferme', 'semence', 'irrigation', 'recolte'],
+  maison: ['maison', 'menage', 'entretien', 'domestique', 'foyer']
 };
 
 export const vagueWords = ['divers', 'best', 'incroyable', 'miracle', 'top top', 'qualite premium absolue'];

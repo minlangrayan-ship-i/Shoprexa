@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { africaCountries, countryPhonePrefixes } from '@/lib/mock-marketplace';
+import { africaCountries, countryPhonePrefixes, marketplaceCategories } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function RegisterPage() {
@@ -99,25 +99,20 @@ export default function RegisterPage() {
             <div className="rounded-xl border p-3 md:col-span-2">
               <p className="mb-2 text-sm font-semibold">{t('Vos préférences produits', 'Your product preferences')}</p>
               <div className="grid gap-2 text-sm md:grid-cols-3">
-                {[
-                  ['energie', 'Énergie'],
-                  ['cuisine', 'Cuisine'],
-                  ['securite', 'Sécurité'],
-                  ['mobilite', 'Mobilité'],
-                  ['fitness', 'Fitness'],
-                  ['organisation', 'Organisation']
-                ].map(([slug, label]) => (
-                  <label key={slug} className="flex items-center gap-2">
+                {marketplaceCategories.map((category) => (
+                  <label key={category.slug} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={preferences.includes(slug)}
+                      checked={preferences.includes(category.slug)}
                       onChange={(event) =>
                         setPreferences((current) =>
-                          event.target.checked ? [...current, slug] : current.filter((entry) => entry !== slug)
+                          event.target.checked
+                            ? [...current, category.slug]
+                            : current.filter((entry) => entry !== category.slug)
                         )
                       }
                     />
-                    {label}
+                    {category.label}
                   </label>
                 ))}
               </div>

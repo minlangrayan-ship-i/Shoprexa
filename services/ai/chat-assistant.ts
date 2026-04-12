@@ -29,6 +29,10 @@ function parseCategoryHint(message: string): string | null {
   if (text.includes('securite') || text.includes('camera')) return 'securite';
   if (text.includes('sport') || text.includes('fitness')) return 'fitness';
   if (text.includes('mobilite') || text.includes('transport') || text.includes('scooter')) return 'mobilite';
+  if (text.includes('sante') || text.includes('hygiene') || text.includes('soin')) return 'sante';
+  if (text.includes('ecole') || text.includes('education') || text.includes('apprentissage')) return 'education';
+  if (text.includes('agriculture') || text.includes('ferme') || text.includes('semence')) return 'agriculture';
+  if (text.includes('maison') || text.includes('menage') || text.includes('domestique')) return 'maison';
   return null;
 }
 

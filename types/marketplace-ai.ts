@@ -35,6 +35,7 @@ export type ChatAssistantInput = {
   country: string;
   city: string;
   history: AssistantMessage[];
+  isGuest?: boolean;
 };
 
 export type ChatAssistantOutput = {
@@ -166,4 +167,99 @@ export type AiHealthSnapshot = {
     recommendationClicks: number;
   };
   windows: Record<AiHealthWindow, AiHealthWindowSnapshot>;
+};
+
+export type VisionProvider = 'mock' | 'fallback';
+
+export type VisionQuality = 'high' | 'medium' | 'low';
+
+export type VisionSignal = {
+  label: string;
+  confidence: number;
+};
+
+export type VisionAnalysisRequest = {
+  imageUrls: string[];
+  name?: string;
+  categorySlug?: string;
+  description?: string;
+  locale: Locale;
+};
+
+export type VisionAnalysisResult = {
+  provider: VisionProvider;
+  quality: VisionQuality;
+  fallbackUsed: boolean;
+  summary: string;
+  labels: VisionSignal[];
+};
+
+export type ListingCoherenceInput = {
+  name: string;
+  categorySlug: string;
+  description?: string;
+  imageUrls: string[];
+  locale: Locale;
+};
+
+export type ListingCoherenceResult = {
+  score: number;
+  status: VerificationStatus;
+  confidence: 'high' | 'medium' | 'low';
+  alerts: string[];
+  recommendations: string[];
+  breakdown: {
+    textScore: number;
+    imageScore: number;
+    crossSignalScore: number;
+  };
+};
+
+export type QueryIntent = 'find_product' | 'compare_products' | 'delivery_question' | 'general_help';
+
+export type ParsedUserQuery = {
+  raw: string;
+  intent: QueryIntent;
+  categorySlug: string | null;
+  budgetMax: number | null;
+  country: string | null;
+  city: string | null;
+  needs: string[];
+  tokens: string[];
+};
+
+export type RankedCatalogProduct = {
+  product: ProductLite;
+  matchScore: number;
+  coherenceScore: number;
+  finalScore: number;
+  reasons: string[];
+};
+
+export type GroundedAnswer = {
+  text: string;
+  usedProductIds: string[];
+};
+
+export type ListingIntelligenceRequest = {
+  locale: Locale;
+  country: string;
+  city: string;
+  userQuery: string;
+  listing: {
+    name: string;
+    categorySlug: string;
+    description?: string;
+    imageUrls: string[];
+  };
+  maxResults?: number;
+};
+
+export type ListingIntelligenceResponse = {
+  vision: VisionAnalysisResult;
+  coherence: ListingCoherenceResult;
+  query: ParsedUserQuery;
+  results: RankedCatalogProduct[];
+  answer: GroundedAnswer;
+  fallbackUsed: boolean;
 };

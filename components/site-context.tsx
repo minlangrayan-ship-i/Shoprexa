@@ -8,6 +8,7 @@ import {
   demoUsers,
   findUserByCredentials,
   getSellerTrustStats,
+  marketplaceCategories,
   marketplaceProducts,
   seededRecruitmentOffers,
   seededSellerComplaints,
@@ -60,6 +61,17 @@ type AdminNotification = {
   createdAt: string;
 };
 
+type DropshipperCatalogProposal = {
+  id: string;
+  dropshipperId: string;
+  dropshipperName: string;
+  productIds: string[];
+  proposedByUserId: string;
+  proposedByRole: 'admin' | 'dropshipper';
+  target: 'all_vendors';
+  createdAt: string;
+};
+
 type SiteContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -78,6 +90,7 @@ type SiteContextValue = {
   testimonials: ClientTestimonial[];
   recruitmentOffers: RecruitmentOffer[];
   adminNotifications: AdminNotification[];
+  dropshipperCatalogProposals: DropshipperCatalogProposal[];
   siteVisits: number;
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
@@ -123,12 +136,20 @@ type SiteContextValue = {
   respondRecruitmentOffer: (offerId: string, decision: 'accepted' | 'rejected') => { ok: boolean; message: string };
   adminChangeUserRole: (userId: string, role: AccountRole) => { ok: boolean; message: string };
   adminDeleteUser: (userId: string) => { ok: boolean; message: string };
+  proposeDropshipperCatalog: (payload: {
+    dropshipperId: string;
+    dropshipperName: string;
+    productIds: string[];
+  }) => { ok: boolean; message: string };
   deleteCurrentAccount: () => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
 };
 
 const STORAGE_KEY = 'min-shop-site-context-v5';
 const PRIMARY_ADMIN_ID = 'admin-1';
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  marketplaceCategories.map((category) => [category.slug, category.label])
+);
 
 function normalizeSingleAdmin(users: DemoUser[]) {
   return users.map((user) => {
@@ -161,6 +182,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [testimonials] = useState<ClientTestimonial[]>(seededTestimonials);
   const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+  const [dropshipperCatalogProposals, setDropshipperCatalogProposals] = useState<DropshipperCatalogProposal[]>([]);
   const [siteVisits, setSiteVisits] = useState(0);
 
   useEffect(() => {
@@ -187,6 +209,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         reviews?: SellerReview[];
         recruitmentOffers?: RecruitmentOffer[];
         adminNotifications?: AdminNotification[];
+        dropshipperCatalogProposals?: DropshipperCatalogProposal[];
         siteVisits?: number;
       };
 
@@ -205,6 +228,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         );
       }
       if (parsed.adminNotifications?.length) setAdminNotifications(parsed.adminNotifications);
+      if (parsed.dropshipperCatalogProposals?.length) setDropshipperCatalogProposals(parsed.dropshipperCatalogProposals);
       if (typeof parsed.siteVisits === 'number') setSiteVisits(parsed.siteVisits);
     } catch {
       // Ignore localStorage parsing errors.
@@ -212,8 +236,39 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale, country, city, sessionUser, users, sellers, products, orders, reviews, recruitmentOffers, adminNotifications, siteVisits }));
-  }, [locale, country, city, sessionUser, users, sellers, products, orders, reviews, recruitmentOffers, adminNotifications, siteVisits]);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        locale,
+        country,
+        city,
+        sessionUser,
+        users,
+        sellers,
+        products,
+        orders,
+        reviews,
+        recruitmentOffers,
+        adminNotifications,
+        dropshipperCatalogProposals,
+        siteVisits
+      })
+    );
+  }, [
+    locale,
+    country,
+    city,
+    sessionUser,
+    users,
+    sellers,
+    products,
+    orders,
+    reviews,
+    recruitmentOffers,
+    adminNotifications,
+    dropshipperCatalogProposals,
+    siteVisits
+  ]);
 
   const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
 
@@ -295,15 +350,16 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     setUsers((current) => [nextUser, ...current]);
 
     if (payload.role === 'seller' && sellerId) {
+      const nextSellerType: SellerType = payload.sellerType ?? 'min_shop';
       setSellers((current) => [
         {
           id: sellerId,
           slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
           name: payload.name,
           company:
-            sellerType === 'company'
+            nextSellerType === 'company'
               ? `${payload.name.split(' ')[0]} Entreprise`
-              : sellerType === 'dropshipper'
+              : nextSellerType === 'dropshipper'
                 ? `${payload.name.split(' ')[0]} Dropship`
                 : `${payload.name.split(' ')[0]} Store`,
           email: payload.email,
@@ -313,7 +369,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           city: payload.city,
           verified: false,
           identityVerified: false,
-          sellerType,
+          sellerType: nextSellerType,
           about: 'Nouveau vendeur Min-shop.'
         },
         ...current
@@ -492,14 +548,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     const seller = sellers.find((entry) => entry.id === sessionUser.sellerId);
     if (!seller) return { ok: false, message: t('Profil vendeur introuvable.', 'Seller profile not found.') };
 
-    const categoryLabel = {
-      energie: 'Energie',
-      cuisine: 'Cuisine',
-      securite: 'Securite',
-      mobilite: 'Mobilite',
-      fitness: 'Fitness',
-      organisation: 'Organisation'
-    }[payload.categorySlug] ?? 'Divers';
+    const categoryLabel = CATEGORY_LABELS[payload.categorySlug] ?? 'Divers';
 
     const product: MarketplaceProduct = {
       id: `prod-${Date.now()}`,
@@ -559,14 +608,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     updateSellerProduct(productId, { stock });
   };
 
-  const categoryLabels: Record<string, string> = {
-    energie: 'Energie',
-    cuisine: 'Cuisine',
-    securite: 'Securite',
-    mobilite: 'Mobilite',
-    fitness: 'Fitness',
-    organisation: 'Organisation'
-  };
+  const categoryLabels = CATEGORY_LABELS;
 
   const adminAddProduct = (payload: {
     sellerId: string;
@@ -742,6 +784,57 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     return { ok: true, message: t('Compte supprimé.', 'Account deleted.') };
   };
 
+  const proposeDropshipperCatalog = (payload: {
+    dropshipperId: string;
+    dropshipperName: string;
+    productIds: string[];
+  }) => {
+    if (!sessionUser) return { ok: false, message: t('Connecte-toi d abord.', 'Please login first.') };
+
+    const canPropose =
+      sessionUser.role === 'admin' ||
+      (sessionUser.role === 'seller' && sessionUser.sellerType === 'dropshipper');
+    if (!canPropose) {
+      return {
+        ok: false,
+        message: t(
+          'Action reservee a l admin et aux comptes dropshipper.',
+          'Only admin and dropshipper accounts can do this action.'
+        )
+      };
+    }
+    if (payload.productIds.length === 0) {
+      return { ok: false, message: t('Aucun produit dans ce catalogue.', 'No products found in this catalog.') };
+    }
+
+    const createdAt = new Date().toISOString().slice(0, 10);
+    const proposal: DropshipperCatalogProposal = {
+      id: `drop-proposal-${Date.now()}`,
+      dropshipperId: payload.dropshipperId,
+      dropshipperName: payload.dropshipperName,
+      productIds: payload.productIds,
+      proposedByUserId: sessionUser.id,
+      proposedByRole: sessionUser.role === 'admin' ? 'admin' : 'dropshipper',
+      target: 'all_vendors',
+      createdAt
+    };
+
+    setDropshipperCatalogProposals((current) => [proposal, ...current]);
+    setAdminNotifications((current) => [
+      {
+        id: `notif-drop-${Date.now()}`,
+        message: `Catalogue dropshipper propose: ${payload.dropshipperName} (${payload.productIds.length} produit(s))`,
+        createdAt
+      },
+      ...current
+    ]);
+
+    return {
+      ok: true,
+      message: t('Catalogue propose aux vendeurs avec succes.', 'Catalog successfully proposed to vendors.')
+    };
+  };
+
   const deleteCurrentAccount = () => {
     if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
     if (sessionUser.role === 'admin') {
@@ -800,6 +893,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         testimonials,
         recruitmentOffers,
         adminNotifications,
+        dropshipperCatalogProposals,
         siteVisits,
         login,
         register,
@@ -819,6 +913,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         respondRecruitmentOffer,
         adminChangeUserRole,
         adminDeleteUser,
+        proposeDropshipperCatalog,
         deleteCurrentAccount,
         t
       }}

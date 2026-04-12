@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { SellerLayout } from '@/components/seller-layout';
 import { useSite } from '@/components/site-context';
 import { ProductVerificationPanel } from '@/features/product-verification/components/verification-panel';
+import { marketplaceCategories } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 
 function fileToBase64(file: File) {
@@ -86,12 +87,11 @@ export default function SellerProductsPage() {
               <option value="service">{t('Service', 'Service')}</option>
             </select>
             <select name="categorySlug" className="rounded-lg border px-3 py-2">
-              <option value="energie">Énergie</option>
-              <option value="cuisine">Cuisine</option>
-              <option value="securite">Sécurité</option>
-              <option value="mobilite">Mobilité</option>
-              <option value="fitness">Fitness</option>
-              <option value="organisation">Organisation</option>
+              {marketplaceCategories.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.label}
+                </option>
+              ))}
             </select>
             <input name="serviceDuration" placeholder={t('Durée service (optionnel)', 'Service duration (optional)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
             <input name="serviceAvailability" placeholder={t('Disponibilité service (optionnel)', 'Service availability (optional)')} className="rounded-lg border px-3 py-2 md:col-span-2" />
