@@ -4,6 +4,7 @@ export const env = {
   APP_SESSION_SECRET: process.env.APP_SESSION_SECRET ?? 'dev-session-secret-change-me',
   APP_SESSION_COOKIE_NAME: process.env.APP_SESSION_COOKIE_NAME ?? 'shoprex_session',
   APP_SESSION_TTL_SECONDS: Number(process.env.APP_SESSION_TTL_SECONDS ?? '604800'),
+  MINSHOP_AI_SERVICE_URL: process.env.MINSHOP_AI_SERVICE_URL ?? 'http://127.0.0.1:8010',
   FLUTTERWAVE_PUBLIC_KEY: process.env.FLUTTERWAVE_PUBLIC_KEY ?? '',
   FLUTTERWAVE_SECRET_KEY: process.env.FLUTTERWAVE_SECRET_KEY ?? '',
   FLUTTERWAVE_WEBHOOK_SECRET: process.env.FLUTTERWAVE_WEBHOOK_SECRET ?? '',

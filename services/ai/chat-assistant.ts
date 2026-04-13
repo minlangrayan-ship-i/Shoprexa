@@ -1,7 +1,8 @@
-﻿import { faqKnowledge } from '@/db/mock-ai-data';
+import { faqKnowledge } from '@/db/mock-ai-data';
 import { formatPrice } from '@/lib/utils';
 import { runAiAdapter } from '@/services/ai/llm-adapter';
 import { toProductLite } from '@/services/marketplace-data';
+import { mapSearchIntent, searchProductsViaPythonAi } from '@/services/ai/python-ai-service';
 import type { AssistantIntent, ChatAssistantInput, ChatAssistantOutput, ProductLite } from '@/types/marketplace-ai';
 
 function detectIntent(message: string): AssistantIntent {
@@ -42,7 +43,7 @@ function searchProducts(params: { message: string; country: string; city: string
   const categoryHint = parseCategoryHint(params.message);
   const keywords = params.message.toLowerCase().split(/\s+/).filter((token) => token.length > 2);
 
-  const scored = all
+  return all
     .map((product) => {
       let score = 0;
       if (product.country === params.country) score += 3;
@@ -62,18 +63,29 @@ function searchProducts(params: { message: string; country: string; city: string
     .sort((a, b) => b.score - a.score)
     .slice(0, 4)
     .map((entry) => entry.product);
-
-  return scored;
 }
 
 export async function buildChatAssistantReply(input: ChatAssistantInput): Promise<ChatAssistantOutput> {
   try {
     const intent = detectIntent(input.message);
-    const suggestions = searchProducts({
+    const localSuggestions = searchProducts({
       message: input.message,
       country: input.country,
       city: input.city
     });
+
+    // The Python microservice becomes the primary search brain for product discovery,
+    // while the local scorer remains as a safe fallback if it is unavailable.
+    const pythonResult =
+      intent === 'product_search' || intent === 'general_help'
+        ? await searchProductsViaPythonAi({
+            query: input.message,
+            locale: input.locale,
+            topK: 4
+          })
+        : null;
+
+    const suggestions = pythonResult?.suggestions.length ? pythonResult.suggestions : localSuggestions;
 
     if (intent === 'faq_delivery') {
       return {
@@ -125,6 +137,15 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
     }
 
     if (intent === 'product_search' && suggestions.length > 0) {
+      if (pythonResult?.suggestions.length) {
+        return {
+          intent: mapSearchIntent(pythonResult.intent),
+          answer: pythonResult.answer,
+          suggestions,
+          fallbackUsed: false
+        };
+      }
+
       const ai = await runAiAdapter({
         locale: input.locale,
         prompt:
@@ -140,12 +161,21 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
       };
     }
 
+    if (pythonResult?.suggestions.length) {
+      return {
+        intent: mapSearchIntent(pythonResult.intent),
+        answer: pythonResult.answer,
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
     return {
       intent: 'general_help',
       answer:
         input.locale === 'fr'
-          ? 'Je peux t aider a trouver un produit, comparer des offres, ou expliquer livraison/paiement/retour.'
-          : 'I can help you find products, compare offers, and explain delivery/payment/returns.',
+          ? 'Je peux t aider a trouver un produit, comparer des offres, ou expliquer livraison, paiement et retour.'
+          : 'I can help you find products, compare offers, and explain delivery, payment, and returns.',
       suggestions,
       fallbackUsed: false
     };
