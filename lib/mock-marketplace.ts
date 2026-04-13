@@ -261,6 +261,23 @@ const peopleNames = [
   'Amina', 'Boris', 'Cedric', 'Diane', 'Emile', 'Fatou', 'Grace', 'Herve', 'Ines', 'Junior',
   'Khadija', 'Lionel', 'Mariam', 'Nadine', 'Oumar', 'Prisca', 'Quentin', 'Ruth', 'Serge', 'Tania'
 ];
+const sellerAnnouncementImages = {
+  min_shop: [
+    'https://images.unsplash.com/photo-1509395176047-4a66953fd231?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1497449493050-aad1e7cad165?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=1400&q=85&auto=format&fit=crop'
+  ],
+  company: [
+    'https://images.unsplash.com/photo-1558002038-1055907df827?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1557324232-b8917d04d3f7?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1558002038-0f75cf2330ef?w=1400&q=85&auto=format&fit=crop'
+  ],
+  dropshipper: [
+    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1604868189265-219ba7bf7ea7?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=1400&q=85&auto=format&fit=crop'
+  ]
+};
 
 function slugify(value: string) {
   return value
@@ -431,10 +448,10 @@ function buildSellerProfileExtras(company: string, city: string, country: string
   const socialSlug = slugify(company);
   const announcementPool =
     sellerType === 'company'
-      ? imageSets.security
+      ? sellerAnnouncementImages.company
       : sellerType === 'dropshipper'
-        ? imageSets.mobility
-        : imageSets.solar;
+        ? sellerAnnouncementImages.dropshipper
+        : sellerAnnouncementImages.min_shop;
 
   return {
     activityDescription: `${buildSellerActivityDescription(company, city, country, sellerType)}${buildSellerSupportText(company, city)}`,
