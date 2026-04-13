@@ -75,6 +75,7 @@ type DropshipperCatalogProposal = {
 type SiteContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  isHydrated: boolean;
   country: string;
   city: string;
   availableCities: string[];
@@ -170,6 +171,7 @@ const SiteContext = createContext<SiteContextValue | null>(null);
 
 export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>('fr');
+  const [isHydrated, setIsHydrated] = useState(false);
   const [country, setCountryState] = useState<string>(africaCountries[0].country);
   const [city, setCityState] = useState<string>(africaCountries[0].cities[0]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
@@ -194,7 +196,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      setIsHydrated(true);
+      return;
+    }
 
     try {
       const parsed = JSON.parse(raw) as {
@@ -232,6 +237,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (typeof parsed.siteVisits === 'number') setSiteVisits(parsed.siteVisits);
     } catch {
       // Ignore localStorage parsing errors.
+    } finally {
+      // Mark the client store as ready so pages can avoid rendering unstable first-pass content.
+      setIsHydrated(true);
     }
   }, []);
 
@@ -972,6 +980,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       value={{
         locale,
         setLocale,
+        isHydrated,
         country,
         city,
         availableCities,
