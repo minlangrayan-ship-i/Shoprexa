@@ -1,34 +1,11 @@
 import type { MarketplaceProduct, MarketplaceSeller } from '@/lib/mock-marketplace';
+import { assessLinguisticQuality } from '@/services/ai/linguistic-quality';
 
 export type SellerProfileReadiness = {
   accessible: boolean;
   score: number;
   alerts: string[];
 };
-
-const brokenEncodingPattern = /Ã|â€™|â€œ|â€|�/;
-const suspiciousFragments = [
-  'lorem ipsum',
-  'test test',
-  'xxx',
-  'pas encore',
-  'to do',
-  'coming soon',
-  'n/a'
-];
-
-function countSuspiciousTypos(content: string) {
-  const patterns = [
-    /\bteh\b/gi,
-    /\brecieve\b/gi,
-    /\badress\b/gi,
-    /\bcommende\b/gi,
-    /\bproduitss\b/gi,
-    /\bservicess\b/gi
-  ];
-
-  return patterns.reduce((count, pattern) => count + (content.match(pattern)?.length ?? 0), 0);
-}
 
 export function validateSellerProfileReadiness(
   seller: MarketplaceSeller,
@@ -38,9 +15,10 @@ export function validateSellerProfileReadiness(
   const sellerOffers = products.filter((product) => product.sellerId === seller.id);
   const serviceCount = sellerOffers.filter((offer) => (offer.kind ?? 'product') === 'service').length;
   const combinedText = [seller.activityDescription, seller.about, ...sellerOffers.map((offer) => offer.description)].join(' ').trim();
+  const linguisticQuality = assessLinguisticQuality(combinedText, locale);
 
-  const alerts: string[] = [];
-  let score = 100;
+  const alerts = [...linguisticQuality.alerts];
+  let score = linguisticQuality.score;
 
   if (seller.activityDescription.trim().length < 350) {
     alerts.push(
@@ -51,44 +29,12 @@ export function validateSellerProfileReadiness(
     score -= 40;
   }
 
-  if (brokenEncodingPattern.test(combinedText)) {
-    alerts.push(
-      locale === 'fr'
-        ? 'Le texte public contient des caracteres mal encodes. Corrige la langue avant publication.'
-        : 'Public text contains broken encoded characters. Fix the language before publishing.'
-    );
-    score -= 35;
-  }
-
-  const suspiciousCount = suspiciousFragments.reduce(
-    (count, fragment) => count + (combinedText.toLowerCase().includes(fragment) ? 1 : 0),
-    0
-  );
-  if (suspiciousCount > 0) {
-    alerts.push(
-      locale === 'fr'
-        ? 'Le profil contient des formulations trop faibles ou provisoires.'
-        : 'The profile contains weak or provisional wording.'
-    );
-    score -= suspiciousCount * 8;
-  }
-
-  const typoCount = countSuspiciousTypos(combinedText);
-  if (typoCount > 0) {
-    alerts.push(
-      locale === 'fr'
-        ? 'Le profil semble contenir des fautes en francais ou en anglais.'
-        : 'The profile appears to contain French or English mistakes.'
-    );
-    score -= Math.min(24, typoCount * 6);
-  }
-
   const shortOfferDescriptions = sellerOffers.filter((offer) => offer.description.trim().length < 60).length;
   if (shortOfferDescriptions > 0) {
     alerts.push(
       locale === 'fr'
         ? 'Certaines descriptions produit/service sont trop courtes pour inspirer confiance.'
-        : 'Some product/service descriptions are too short to build trust.'
+        : 'Some product or service descriptions are too short to build trust.'
     );
     score -= Math.min(20, shortOfferDescriptions * 4);
   }
@@ -130,7 +76,7 @@ export function validateSellerProfileReadiness(
   }
 
   return {
-    accessible: score >= 72,
+    accessible: score >= 72 && seller.activityDescription.trim().length >= 350 && linguisticQuality.typoCount === 0,
     score: Math.max(0, Math.min(100, score)),
     alerts
   };
