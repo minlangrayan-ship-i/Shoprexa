@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Eye, Star } from 'lucide-react';
 import { useState } from 'react';
+import { getProductImageFitClass } from '@/lib/image-quality';
 import { formatPrice } from '@/lib/utils';
 import type { CartItem } from '@/lib/types';
 import { useSite } from '@/components/site-context';
@@ -70,8 +71,9 @@ export function ProductCard({ product }: { product: Product }) {
               src={product.images[0]}
               alt={product.name}
               fill
+              quality={90}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-cover transition duration-500 group-hover:scale-105"
+              className={`${getProductImageFitClass(product.images[0])} transition duration-500 group-hover:scale-105`}
             />
           </Link>
 
@@ -142,12 +144,15 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPreview(false)}>
           <div className="w-full max-w-lg rounded-2xl bg-white p-4" onClick={(event) => event.stopPropagation()}>
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-              <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+              <Image src={product.images[0]} alt={product.name} fill quality={92} className={getProductImageFitClass(product.images[0])} />
             </div>
             <h3 className="mt-3 text-lg font-bold">{product.name}</h3>
             <p className="mt-1 text-sm text-slate-600">{product.description ?? t('Produit tendance du catalogue Min-shop.', 'Trending product from Min-shop catalog.')}</p>
             <div className="mt-3 flex items-center justify-between">
-              <p className="font-bold text-brand-700">{formatPrice(product.price, country)}</p>
+              <div>
+                <p className="font-bold text-brand-700">{formatPrice(product.price, country)}</p>
+                {product.oldPrice ? <p className="text-xs text-slate-400 line-through">{formatPrice(product.oldPrice, country)}</p> : null}
+              </div>
               <Link href={`/product/${product.slug}`} className="rounded-lg bg-dark px-3 py-2 text-xs font-semibold text-white">
                 {t('Voir la fiche complète', 'View full details')}
               </Link>

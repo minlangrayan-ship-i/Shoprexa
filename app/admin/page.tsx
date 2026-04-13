@@ -84,6 +84,7 @@ export default function AdminPage() {
       name: String(formData.get('name')),
       description: String(formData.get('description')),
       price: Number(formData.get('price')),
+      oldPrice: Number(formData.get('oldPrice') || 0) || null,
       stock: Number(formData.get('stock')),
       categorySlug: String(formData.get('categorySlug')),
       images,
@@ -133,7 +134,10 @@ export default function AdminPage() {
             name: product.name,
             categorySlug: product.categorySlug,
             description: product.description,
-            imageUrls: product.images
+            images: product.images.map((src, index) => ({
+              src,
+              ...(product.imageMeta?.[index] ?? { source: 'catalog' as const })
+            }))
           },
           locale
         )
@@ -470,6 +474,7 @@ export default function AdminPage() {
               </select>
               <input required name="name" placeholder={t('Nom produit/service', 'Product/service name')} className="rounded-lg border px-3 py-2" />
               <input required name="price" type="number" min="1" placeholder={t('Prix', 'Price')} className="rounded-lg border px-3 py-2" />
+              <input name="oldPrice" type="number" min="1" placeholder={t('Prix avant réduction (optionnel)', 'Price before discount (optional)')} className="rounded-lg border px-3 py-2" />
               <input required name="stock" type="number" min="0" placeholder={t('Stock', 'Stock')} className="rounded-lg border px-3 py-2" />
               <select name="categorySlug" className="rounded-lg border px-3 py-2">
                 {marketplaceCategories.map((category) => (
@@ -525,7 +530,12 @@ export default function AdminPage() {
                       <td className="py-2">{product.name}</td>
                       <td className="py-2">{product.kind === 'service' ? t('Service', 'Service') : t('Produit', 'Product')}</td>
                       <td className="py-2">{product.companyName}</td>
-                      <td className="py-2">{formatPrice(product.price)}</td>
+                      <td className="py-2">
+                        <div className="flex flex-col">
+                          <span>{formatPrice(product.price)}</span>
+                          {product.oldPrice ? <span className="text-xs text-slate-400 line-through">{formatPrice(product.oldPrice)}</span> : null}
+                        </div>
+                      </td>
                       <td className="py-2">{product.stock}</td>
                       <td className="py-2 font-semibold">{trust.score}/100</td>
                       <td className="py-2">

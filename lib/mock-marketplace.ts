@@ -42,6 +42,13 @@ export type MarketplaceProduct = {
   oldPrice: number | null;
   stock: number;
   images: string[];
+  imageMeta?: Array<{
+    width?: number;
+    height?: number;
+    sizeKb?: number;
+    mimeType?: string;
+    source?: 'upload' | 'catalog';
+  }>;
   category: string;
   categorySlug: string;
   problemTag: string;

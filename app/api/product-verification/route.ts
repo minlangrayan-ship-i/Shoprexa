@@ -10,7 +10,18 @@ const schema = z.object({
   name: z.string().min(2),
   categorySlug: z.string().min(2),
   description: z.string().optional(),
-  imageUrls: z.array(z.string()).default([])
+  images: z
+    .array(
+      z.object({
+        src: z.string().min(2),
+        width: z.number().optional(),
+        height: z.number().optional(),
+        sizeKb: z.number().optional(),
+        mimeType: z.string().optional(),
+        source: z.enum(['upload', 'catalog']).optional()
+      })
+    )
+    .default([])
 });
 
 export async function POST(request: Request) {

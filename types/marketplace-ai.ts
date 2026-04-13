@@ -84,11 +84,20 @@ export type RecommendationResponse = {
   blocks: RecommendationBlock[];
 };
 
+export type VerificationImageInput = {
+  src: string;
+  width?: number;
+  height?: number;
+  sizeKb?: number;
+  mimeType?: string;
+  source?: 'upload' | 'catalog';
+};
+
 export type VerificationRequest = {
   name: string;
   categorySlug: string;
   description?: string;
-  imageUrls: string[];
+  images: VerificationImageInput[];
 };
 
 export type VerificationStatus = 'valid' | 'needs_review' | 'suspect';
@@ -179,7 +188,7 @@ export type VisionSignal = {
 };
 
 export type VisionAnalysisRequest = {
-  imageUrls: string[];
+  images: VerificationImageInput[];
   name?: string;
   categorySlug?: string;
   description?: string;
@@ -198,7 +207,7 @@ export type ListingCoherenceInput = {
   name: string;
   categorySlug: string;
   description?: string;
-  imageUrls: string[];
+  images: VerificationImageInput[];
   locale: Locale;
 };
 
@@ -250,7 +259,7 @@ export type ListingIntelligenceRequest = {
     name: string;
     categorySlug: string;
     description?: string;
-    imageUrls: string[];
+    images: VerificationImageInput[];
   };
   maxResults?: number;
 };

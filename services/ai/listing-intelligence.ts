@@ -12,7 +12,7 @@ export async function runListingIntelligence(
     name: input.listing.name,
     categorySlug: input.listing.categorySlug,
     description: input.listing.description,
-    imageUrls: input.listing.imageUrls,
+    images: input.listing.images,
     locale: input.locale
   });
 

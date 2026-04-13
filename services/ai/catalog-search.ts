@@ -28,7 +28,10 @@ export function rankCatalogProductsByQuery(params: {
         name: full?.name ?? product.name,
         categorySlug: full?.categorySlug ?? product.categorySlug,
         description: full?.description ?? '',
-        imageUrls: full?.images ?? [product.image]
+        images: (full?.images ?? [product.image]).map((src, index) => ({
+          src,
+          ...(full?.imageMeta?.[index] ?? { source: 'catalog' as const })
+        }))
       },
       params.locale
     );

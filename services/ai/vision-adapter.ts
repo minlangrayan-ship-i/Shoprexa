@@ -1,4 +1,5 @@
 import { categoryKeywords } from '@/db/mock-ai-data';
+import { assessImageQuality } from '@/lib/image-quality';
 import type { VisionAnalysisRequest, VisionAnalysisResult, VisionSignal } from '@/types/marketplace-ai';
 
 type VisionAnalyzer = (input: VisionAnalysisRequest) => Promise<VisionAnalysisResult>;
@@ -20,22 +21,20 @@ function mergeSignals(signals: VisionSignal[]) {
 }
 
 const mockVisionAnalyzer: VisionAnalyzer = async (input) => {
-  if (input.imageUrls.length === 0) {
+  if (input.images.length === 0) {
     return {
       provider: 'fallback',
       quality: 'low',
       fallbackUsed: true,
       summary:
         input.locale === 'fr'
-          ? 'Aucune image fournie. Analyse visuelle basculee en mode fallback.'
+          ? 'Aucune image fournie. Analyse visuelle basculée en mode fallback.'
           : 'No image provided. Visual analysis switched to fallback mode.',
       labels: []
     };
   }
 
-  const textSource = normalizeToken(
-    `${input.name ?? ''} ${input.description ?? ''} ${input.imageUrls.join(' ')} ${input.categorySlug ?? ''}`
-  );
+  const textSource = normalizeToken(`${input.name ?? ''} ${input.description ?? ''} ${input.categorySlug ?? ''}`);
   const signals: VisionSignal[] = [];
 
   for (const [categorySlug, keywords] of Object.entries(categoryKeywords)) {
@@ -46,14 +45,10 @@ const mockVisionAnalyzer: VisionAnalyzer = async (input) => {
     }
   }
 
-  const suspiciousHints = ['avatar', 'placeholder', 'icon', 'blur', 'pixel'];
-  const hasSuspiciousHint = input.imageUrls.some((url) =>
-    suspiciousHints.some((hint) => url.toLowerCase().includes(hint))
-  );
-  const hasDataUrl = input.imageUrls.some((url) => url.startsWith('data:image/'));
-
-  const quality = hasSuspiciousHint ? 'low' : hasDataUrl ? 'medium' : 'high';
-  const fallbackUsed = hasSuspiciousHint;
+  const imageAssessments = input.images.map((image) => assessImageQuality(image, input.locale));
+  const averageImageScore = imageAssessments.reduce((sum, entry) => sum + entry.score, 0) / imageAssessments.length;
+  const quality = averageImageScore >= 80 ? 'high' : averageImageScore >= 60 ? 'medium' : 'low';
+  const fallbackUsed = quality === 'low';
 
   return {
     provider: fallbackUsed ? 'fallback' : 'mock',
@@ -61,7 +56,7 @@ const mockVisionAnalyzer: VisionAnalyzer = async (input) => {
     fallbackUsed,
     summary:
       input.locale === 'fr'
-        ? `Analyse visuelle mock completee (${quality}).`
+        ? `Analyse visuelle mock complétée (${quality}).`
         : `Mock visual analysis completed (${quality}).`,
     labels: mergeSignals(signals)
   };

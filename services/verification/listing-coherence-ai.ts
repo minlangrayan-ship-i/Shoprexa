@@ -49,13 +49,13 @@ export async function evaluateListingCoherence(input: ListingCoherenceInput): Pr
       name: input.name,
       categorySlug: input.categorySlug,
       description: input.description,
-      imageUrls: input.imageUrls
+      images: input.images
     },
     input.locale
   );
 
   const vision = await analyzeProductImage({
-    imageUrls: input.imageUrls,
+    images: input.images,
     name: input.name,
     categorySlug: input.categorySlug,
     description: input.description,

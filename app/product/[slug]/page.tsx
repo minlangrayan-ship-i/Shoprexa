@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { Star } from 'lucide-react';
 import { useSite } from '@/components/site-context';
 import { DeliveryEstimateCard } from '@/features/delivery-estimator/components/delivery-estimate-card';
+import { getProductImageFitClass } from '@/lib/image-quality';
 import { getRegionalDemandAdjustedRating } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { ProductCard } from '@/components/product-card';
@@ -63,7 +64,7 @@ export default function ProductDetailPage() {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border bg-slate-100 shadow-sm">
-            <Image src={product.images[activeImage]} alt={product.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+            <Image src={product.images[activeImage]} alt={product.name} fill quality={92} className={getProductImageFitClass(product.images[activeImage])} sizes="(max-width: 1024px) 100vw, 50vw" />
           </div>
 
           <div className="mt-4 grid grid-cols-4 gap-3">
@@ -73,7 +74,7 @@ export default function ProductDetailPage() {
                 onClick={() => setActiveImage(index)}
                 className={`relative aspect-square overflow-hidden rounded-xl border ${activeImage === index ? 'border-brand-600' : 'border-slate-200'}`}
               >
-                <Image src={image} alt={`${product.name}-${index + 1}`} fill className="object-cover" />
+                <Image src={image} alt={`${product.name}-${index + 1}`} fill quality={88} className={getProductImageFitClass(image)} />
               </button>
             ))}
           </div>

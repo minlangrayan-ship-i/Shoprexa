@@ -1,4 +1,5 @@
-﻿import { categoryKeywords, vagueWords } from '@/db/mock-ai-data';
+import { categoryKeywords, vagueWords } from '@/db/mock-ai-data';
+import { assessImageQuality } from '@/lib/image-quality';
 import type { VerificationRequest, VerificationResponse } from '@/types/marketplace-ai';
 
 function clamp(value: number, min: number, max: number) {
@@ -27,33 +28,45 @@ export function verifyProductConsistency(input: VerificationRequest, locale: 'fr
   const keywordHits = expectedKeywords.filter((keyword) => name.includes(keyword) || description.includes(keyword)).length;
   if (keywordHits === 0) {
     score -= 20;
-    alerts.push(locale === 'fr' ? 'Categorie et contenu textuel peu coherents.' : 'Category and textual content look inconsistent.');
+    alerts.push(locale === 'fr' ? 'Catégorie et contenu textuel peu cohérents.' : 'Category and textual content look inconsistent.');
   } else {
     score += Math.min(12, keywordHits * 3);
   }
 
   if ((input.description ?? '').trim().length < 25) {
     score -= 10;
-    recommendations.push(locale === 'fr' ? 'Ajoute une description plus detaillee (usage, benefice, limites).' : 'Add a more detailed description (usage, benefits, limits).');
+    recommendations.push(
+      locale === 'fr'
+        ? 'Ajoutez une description plus détaillée (usage, bénéfice, limites).'
+        : 'Add a more detailed description (usage, benefits, limits).'
+    );
   }
 
-  if (input.imageUrls.length === 0) {
+  if (input.images.length === 0) {
     score -= 20;
     alerts.push(locale === 'fr' ? 'Aucune image fournie.' : 'No image provided.');
-  }
+  } else {
+    const imageAssessments = input.images.map((image) => assessImageQuality(image, locale));
+    const averageImageScore = imageAssessments.reduce((sum, entry) => sum + entry.score, 0) / imageAssessments.length;
 
-  const suspiciousImage = input.imageUrls.some((url) => {
-    const normalized = url.toLowerCase();
-    return normalized.includes('avatar') || normalized.includes('placeholder') || normalized.includes('icon');
-  });
+    if (averageImageScore < 60) {
+      score -= 18;
+      alerts.push(
+        locale === 'fr'
+          ? 'Qualité d’image insuffisante pour inspirer confiance.'
+          : 'Image quality is too low to build trust.'
+      );
+    } else if (averageImageScore >= 80) {
+      score += 10;
+    } else {
+      score += 4;
+    }
 
-  if (suspiciousImage) {
-    score -= 14;
-    alerts.push(locale === 'fr' ? 'Image potentiellement non representative du produit.' : 'Image may not represent the product.');
-  }
-
-  if (input.imageUrls.length > 0 && !suspiciousImage) {
-    score += 8;
+    for (const assessment of imageAssessments) {
+      for (const reason of assessment.reasons) {
+        if (!alerts.includes(reason)) alerts.push(reason);
+      }
+    }
   }
 
   const normalizedScore = clamp(Math.round(score), 0, 100);
@@ -63,7 +76,7 @@ export function verifyProductConsistency(input: VerificationRequest, locale: 'fr
   if (status !== 'valid') {
     recommendations.push(
       locale === 'fr'
-        ? 'Ajoute une image nette et un titre plus specifique pour augmenter la confiance client.'
+        ? 'Ajoutez une image nette et un titre plus spécifique pour augmenter la confiance client.'
         : 'Add a clear image and a more specific title to increase buyer trust.'
     );
   }

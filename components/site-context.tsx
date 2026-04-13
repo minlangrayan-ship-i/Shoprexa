@@ -27,7 +27,9 @@ import {
   type SellerOrder,
   type SellerReview
 } from '@/lib/mock-marketplace';
+import { validateUploadedImages } from '@/lib/image-quality';
 import type { CartItem } from '@/lib/types';
+import type { VerificationImageInput } from '@/types/marketplace-ai';
 
 type Locale = 'fr' | 'en';
 
@@ -104,15 +106,17 @@ type SiteContextValue = {
     name: string;
     description: string;
     price: number;
+    oldPrice?: number | null;
     stock: number;
     categorySlug: string;
     images: string[];
+    imageMeta?: VerificationImageInput[];
     kind?: 'product' | 'service';
     serviceDuration?: string;
     serviceAvailability?: string;
     targetCountries?: string[];
   }) => { ok: boolean; message: string };
-  updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>) => void;
+  updateSellerProduct: (productId: string, payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'oldPrice' | 'stock' | 'images'>>) => void;
   deleteSellerProduct: (productId: string) => void;
   updateSellerStock: (productId: string, stock: number) => void;
   adminAddProduct: (payload: {
@@ -120,9 +124,11 @@ type SiteContextValue = {
     name: string;
     description: string;
     price: number;
+    oldPrice?: number | null;
     stock: number;
     categorySlug: string;
     images: string[];
+    imageMeta?: VerificationImageInput[];
     kind?: 'product' | 'service';
     serviceDuration?: string;
     serviceAvailability?: string;
@@ -130,7 +136,7 @@ type SiteContextValue = {
   }) => { ok: boolean; message: string };
   adminUpdateProduct: (
     productId: string,
-    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'oldPrice' | 'stock' | 'images' | 'categorySlug'>>
   ) => { ok: boolean; message: string };
   adminDeleteProduct: (productId: string) => { ok: boolean; message: string };
   companySendRecruitmentOffer: (targetSellerId: string, productIds: string[], commissionRate: number) => { ok: boolean; message: string };
@@ -637,9 +643,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     name: string;
     description: string;
     price: number;
+    oldPrice?: number | null;
     stock: number;
     categorySlug: string;
     images: string[];
+    imageMeta?: VerificationImageInput[];
     kind?: 'product' | 'service';
     serviceDuration?: string;
     serviceAvailability?: string;
@@ -650,6 +658,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     const seller = sellers.find((entry) => entry.id === sessionUser.sellerId);
     if (!seller) return { ok: false, message: t('Profil vendeur introuvable.', 'Seller profile not found.') };
 
+    const imageValidation = validateUploadedImages(payload.imageMeta ?? [], locale);
+    if (!imageValidation.ok) {
+      return { ok: false, message: imageValidation.message };
+    }
+
     const categoryLabel = CATEGORY_LABELS[payload.categorySlug] ?? 'Divers';
 
     const product: MarketplaceProduct = {
@@ -658,11 +671,12 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       name: payload.name,
       description: payload.description,
       price: payload.price,
-      oldPrice: null,
+      oldPrice: payload.oldPrice && payload.oldPrice > payload.price ? payload.oldPrice : null,
       stock: seller.sellerType === 'dropshipper' ? 0 : payload.stock,
       images: payload.images.length ? payload.images : [
         'https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'
       ],
+      imageMeta: payload.imageMeta,
       category: categoryLabel,
       categorySlug: payload.categorySlug,
       problemTag: 'Produit vendeur',
@@ -685,7 +699,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
   const updateSellerProduct = (
     productId: string,
-    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images'>>
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'oldPrice' | 'stock' | 'images'>>
   ) => {
     if (!sessionUser?.sellerId) return;
     setProducts((current) =>
@@ -717,9 +731,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     name: string;
     description: string;
     price: number;
+    oldPrice?: number | null;
     stock: number;
     categorySlug: string;
     images: string[];
+    imageMeta?: VerificationImageInput[];
     kind?: 'product' | 'service';
     serviceDuration?: string;
     serviceAvailability?: string;
@@ -735,9 +751,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       name: payload.name,
       description: payload.description,
       price: payload.price,
-      oldPrice: null,
+      oldPrice: payload.oldPrice && payload.oldPrice > payload.price ? payload.oldPrice : null,
       stock: seller.sellerType === 'dropshipper' ? 0 : payload.stock,
       images: payload.images.length ? payload.images : ['https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'],
+      imageMeta: payload.imageMeta,
       category: categoryLabels[payload.categorySlug] ?? 'Divers',
       categorySlug: payload.categorySlug,
       problemTag: 'Catalogue admin',
@@ -796,7 +813,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
   const adminUpdateProduct = (
     productId: string,
-    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'stock' | 'images' | 'categorySlug'>>
+    payload: Partial<Pick<MarketplaceProduct, 'name' | 'description' | 'price' | 'oldPrice' | 'stock' | 'images' | 'categorySlug'>>
   ) => {
     if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
     setProducts((current) =>
