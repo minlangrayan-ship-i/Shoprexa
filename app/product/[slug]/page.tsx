@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Star } from 'lucide-react';
 import { useSite } from '@/components/site-context';
@@ -16,10 +16,15 @@ const WHATSAPP_NUMBER = '237692714985';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
-  const { locale, products, sellers, users, country, city, t } = useSite();
+  const { locale, products, sellers, users, country, city, trackProductView, t } = useSite();
 
   const product = useMemo(() => products.find((entry) => entry.slug === params.slug), [params.slug, products]);
   const [activeImage, setActiveImage] = useState(0);
+
+  useEffect(() => {
+    if (!product) return;
+    trackProductView(product.id);
+  }, [product, trackProductView]);
 
   if (!product) {
     return (

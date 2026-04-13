@@ -95,6 +95,7 @@ type SiteContextValue = {
   adminNotifications: AdminNotification[];
   dropshipperCatalogProposals: DropshipperCatalogProposal[];
   siteVisits: number;
+  trackProductView: (productId: string) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
   logout: () => void;
@@ -155,9 +156,30 @@ type SiteContextValue = {
 
 const STORAGE_KEY = 'min-shop-site-context-v5';
 const PRIMARY_ADMIN_ID = 'admin-1';
+const SITE_VISITS_KEY = 'min-shop-site-visits-total';
+const SITE_VISIT_SESSION_KEY = 'min-shop-site-visit-recorded';
+const PRODUCT_VIEWS_KEY = 'min-shop-product-views';
+const PRODUCT_VIEWED_SESSION_KEY = 'min-shop-product-viewed';
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   marketplaceCategories.map((category) => [category.slug, category.label])
 );
+
+function applyPersistedProductViews(items: MarketplaceProduct[]) {
+  if (typeof window === 'undefined') return items;
+
+  const raw = localStorage.getItem(PRODUCT_VIEWS_KEY);
+  if (!raw) return items;
+
+  try {
+    const persisted = JSON.parse(raw) as Record<string, number>;
+    return items.map((product) => ({
+      ...product,
+      viewCount: Math.max(product.viewCount, persisted[product.id] ?? product.viewCount)
+    }));
+  } catch {
+    return items;
+  }
+}
 
 function normalizeSingleAdmin(users: DemoUser[]) {
   return users.map((user) => {
@@ -195,15 +217,22 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [siteVisits, setSiteVisits] = useState(0);
 
   useEffect(() => {
-    const key = 'min-shop-site-visits';
-    const next = Number(localStorage.getItem(key) ?? '0') + 1;
-    localStorage.setItem(key, String(next));
+    const currentTotal = Number(localStorage.getItem(SITE_VISITS_KEY) ?? '0');
+    if (sessionStorage.getItem(SITE_VISIT_SESSION_KEY) === '1') {
+      setSiteVisits(currentTotal);
+      return;
+    }
+
+    const next = currentTotal + 1;
+    localStorage.setItem(SITE_VISITS_KEY, String(next));
+    sessionStorage.setItem(SITE_VISIT_SESSION_KEY, '1');
     setSiteVisits(next);
   }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
+      setProducts((current) => applyPersistedProductViews(current));
       setIsHydrated(true);
       return;
     }
@@ -232,7 +261,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.sessionUser) setSessionUser(parsed.sessionUser);
       if (parsed.users?.length) setUsers(normalizeSingleAdmin(parsed.users));
       if (parsed.sellers?.length) setSellers(normalizeSellersSnapshot(parsed.sellers));
-      if (parsed.products?.length) setProducts(parsed.products);
+      if (parsed.products?.length) setProducts(applyPersistedProductViews(parsed.products));
       if (parsed.orders?.length) setOrders(parsed.orders);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
       if (parsed.testimonials?.length) setTestimonials(parsed.testimonials);
@@ -243,13 +272,16 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       }
       if (parsed.adminNotifications?.length) setAdminNotifications(parsed.adminNotifications);
       if (parsed.dropshipperCatalogProposals?.length) setDropshipperCatalogProposals(parsed.dropshipperCatalogProposals);
-      if (typeof parsed.siteVisits === 'number') setSiteVisits(parsed.siteVisits);
     } catch {
       // Ignore localStorage parsing errors.
     } finally {
       // Mark the client store as ready so pages can avoid rendering unstable first-pass content.
       setIsHydrated(true);
     }
+  }, []);
+
+  useEffect(() => {
+    setProducts((current) => applyPersistedProductViews(current));
   }, []);
 
   useEffect(() => {
@@ -387,6 +419,25 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       setCityState(availableCities[0]);
     }
   }, [availableCities, city]);
+
+  const trackProductView = (productId: string) => {
+    const sessionRaw = sessionStorage.getItem(PRODUCT_VIEWED_SESSION_KEY);
+    const viewedIds = sessionRaw ? new Set<string>(JSON.parse(sessionRaw) as string[]) : new Set<string>();
+    if (viewedIds.has(productId)) return;
+
+    viewedIds.add(productId);
+    sessionStorage.setItem(PRODUCT_VIEWED_SESSION_KEY, JSON.stringify(Array.from(viewedIds)));
+
+    setProducts((current) => {
+      const nextProducts = current.map((product) =>
+        product.id === productId ? { ...product, viewCount: product.viewCount + 1 } : product
+      );
+
+      const persisted = Object.fromEntries(nextProducts.map((product) => [product.id, product.viewCount]));
+      localStorage.setItem(PRODUCT_VIEWS_KEY, JSON.stringify(persisted));
+      return nextProducts;
+    });
+  };
 
   const setCountry = (nextCountry: string) => {
     setCountryState(nextCountry);
@@ -1063,6 +1114,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         adminNotifications,
         dropshipperCatalogProposals,
         siteVisits,
+        trackProductView,
         login,
         register,
         logout,
