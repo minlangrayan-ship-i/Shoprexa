@@ -62,6 +62,7 @@ type ProfileUpdatePayload = {
   whatsapp?: string;
   instagram?: string;
   facebook?: string;
+  announcementImages?: string[];
 };
 
 type AdminNotification = {
@@ -608,6 +609,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
                   instagram: payload.instagram ?? seller.socialLinks?.instagram,
                   facebook: payload.facebook ?? seller.socialLinks?.facebook
                 },
+                announcementImages:
+                  payload.announcementImages && payload.announcementImages.length > 0
+                    ? payload.announcementImages
+                    : seller.announcementImages,
                 logoUrl: payload.avatar ?? seller.logoUrl
               }
             : seller

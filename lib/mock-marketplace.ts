@@ -1205,8 +1205,17 @@ export function getSellerTrustStats(
   const satisfactionRate = totalOrders === 0 ? 0 : Math.round((satisfiedClients / totalOrders) * 100);
   const complaintCount = complaints.filter((entry) => entry.sellerId === seller.id).length;
   const validCatalog = sellerProducts.every((product) => product.images.length > 0 && product.description.trim().length >= 16);
+  const socialLinksCount = Object.values(seller.socialLinks ?? {}).filter(Boolean).length;
+  const profileAccessible =
+    seller.activityDescription.trim().length >= 350 &&
+    Boolean(seller.openingHours) &&
+    Boolean(seller.closingHours) &&
+    socialLinksCount >= 2 &&
+    sellerProducts.length > 0 &&
+    sellerProducts.every((product) => product.description.trim().length >= 60);
   const hasPerformanceBadge =
     seller.identityVerified &&
+    profileAccessible &&
     validCatalog &&
     successfulOrders >= 10 &&
     satisfactionRate >= 80 &&
@@ -1222,7 +1231,8 @@ export function getSellerTrustStats(
     satisfiedClients,
     satisfactionRate,
     complaintCount,
-    validCatalog
+    validCatalog,
+    profileAccessible
   };
 }
 

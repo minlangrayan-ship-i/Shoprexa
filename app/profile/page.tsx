@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const { sessionUser, sellers, updateProfile, deleteCurrentAccount, t, availableCities, setCountry } = useSite();
   const [status, setStatus] = useState('');
   const [avatar, setAvatar] = useState<string | undefined>(sessionUser?.avatar);
+  const [announcementImages, setAnnouncementImages] = useState<string[]>([]);
 
   const sellerProfile = sellers.find((seller) => seller.id === sessionUser?.sellerId);
 
@@ -55,7 +56,8 @@ export default function ProfilePage() {
       linkedin: String(formData.get('linkedin') ?? ''),
       whatsapp: String(formData.get('whatsapp') ?? ''),
       instagram: String(formData.get('instagram') ?? ''),
-      facebook: String(formData.get('facebook') ?? '')
+      facebook: String(formData.get('facebook') ?? ''),
+      announcementImages
     });
 
     setStatus(result.message);
@@ -67,6 +69,13 @@ export default function ProfilePage() {
     const result = deleteCurrentAccount();
     setStatus(result.message);
     if (result.ok) router.push('/');
+  };
+
+  const onAnnouncementImagesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+    const base64Images = await Promise.all(files.slice(0, 5).map((file) => fileToBase64(file)));
+    setAnnouncementImages(base64Images);
   };
 
   return (
@@ -133,6 +142,19 @@ export default function ProfilePage() {
               <input name="whatsapp" defaultValue={sellerProfile?.socialLinks?.whatsapp} placeholder="WhatsApp URL" className="rounded-xl border px-3 py-2" />
               <input name="instagram" defaultValue={sellerProfile?.socialLinks?.instagram} placeholder="Instagram URL" className="rounded-xl border px-3 py-2" />
               <input name="facebook" defaultValue={sellerProfile?.socialLinks?.facebook} placeholder="Facebook URL" className="rounded-xl border px-3 py-2" />
+              <label className="rounded-xl border px-3 py-3 text-sm font-semibold md:col-span-2">
+                {t('Ajouter des annonces publicitaires (images)', 'Add ad banners (images)')}
+                <input type="file" accept="image/*" multiple onChange={onAnnouncementImagesChange} className="mt-2 block text-xs" />
+              </label>
+              {(announcementImages.length > 0 || (sellerProfile?.announcementImages?.length ?? 0) > 0) ? (
+                <div className="grid gap-2 md:col-span-2 md:grid-cols-3">
+                  {(announcementImages.length > 0 ? announcementImages : sellerProfile?.announcementImages ?? []).slice(0, 3).map((src, index) => (
+                    <div key={`${src.slice(0, 20)}-${index}`} className="relative h-24 overflow-hidden rounded-lg border">
+                      <Image src={src} alt={`Annonce ${index + 1}`} fill className="object-cover" />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 md:col-span-2">
                 {t(
                   'Le profil public vendeur devient accessible seulement si la description detaillee atteint 350 caracteres et si le texte reste propre et coherent pour l IA.',

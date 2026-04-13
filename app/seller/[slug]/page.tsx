@@ -100,22 +100,17 @@ export default function SellerPublicStorePage() {
   if (!readiness.accessible) {
     return (
       <section className="section py-12">
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold">{t('Profil vendeur en preparation', 'Seller profile in preparation')}</h1>
-          <p className="mt-2 text-slate-600">
+        <div className="rounded-3xl border bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold">{t('Profil vendeur non accessible', 'Seller profile unavailable')}</h1>
+          <p className="mt-3 text-slate-600">
             {t(
-              'Cette page publique reste masquee tant que l IA n a pas valide la description, la qualite du texte et la coherence du profil vendeur.',
-              'This public page stays hidden until the AI validates the description, text quality, and seller profile coherence.'
+              'Ce vendeur n a pas encore valide son profil.',
+              'This seller has not validated their profile yet.'
             )}
           </p>
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-            <p className="font-semibold">{t('Points a corriger', 'Items to fix')}</p>
-            <ul className="mt-2 space-y-1">
-              {readiness.alerts.map((alert) => (
-                <li key={alert}>- {alert}</li>
-              ))}
-            </ul>
-          </div>
+          <Link href="/sellers" className="mt-5 inline-block rounded-xl bg-dark px-4 py-2 text-sm font-semibold text-white">
+            {t('Retour aux vendeurs', 'Back to sellers')}
+          </Link>
         </div>
       </section>
     );
@@ -132,6 +127,30 @@ export default function SellerPublicStorePage() {
 
   return (
     <section className="section py-10">
+      <div className="mb-6 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-8 text-white shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-300">{t('Boutique officielle', 'Official store')}</p>
+            <h2 className="mt-2 text-3xl font-black">{seller.company}</h2>
+            <p className="mt-2 text-sm text-slate-200">{seller.city}, {seller.country}</p>
+          </div>
+          <div className="grid min-w-[220px] grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-white/10 p-2">
+              <p className="text-xs text-slate-300">{t('Produits', 'Products')}</p>
+              <p className="text-lg font-bold">{productOffers.length}</p>
+            </div>
+            <div className="rounded-xl bg-white/10 p-2">
+              <p className="text-xs text-slate-300">{t('Services', 'Services')}</p>
+              <p className="text-lg font-bold">{serviceOffers.length}</p>
+            </div>
+            <div className="rounded-xl bg-white/10 p-2">
+              <p className="text-xs text-slate-300">{t('Abonnes', 'Followers')}</p>
+              <p className="text-lg font-bold">{seller.followerIds?.length ?? 0}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="rounded-3xl border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -173,7 +192,7 @@ export default function SellerPublicStorePage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border bg-slate-50 p-5">
+          <div className="mt-6 rounded-2xl border bg-slate-50 p-5 shadow-inner">
             <h2 className="text-lg font-semibold">{t('Activites de l entreprise', 'Company activities')}</h2>
             <p className="mt-3 leading-7 text-slate-700">{seller.activityDescription}</p>
           </div>
