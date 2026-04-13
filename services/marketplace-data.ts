@@ -6,6 +6,7 @@ export function toProductLite(): ProductLite[] {
     id: product.id,
     slug: product.slug,
     name: product.name,
+    sellerId: product.sellerId,
     price: product.price,
     category: product.category,
     categorySlug: product.categorySlug,

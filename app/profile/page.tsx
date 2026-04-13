@@ -16,14 +16,16 @@ function fileToBase64(file: File) {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { sessionUser, updateProfile, deleteCurrentAccount, t, availableCities, setCountry } = useSite();
+  const { sessionUser, sellers, updateProfile, deleteCurrentAccount, t, availableCities, setCountry } = useSite();
   const [status, setStatus] = useState('');
   const [avatar, setAvatar] = useState<string | undefined>(sessionUser?.avatar);
+
+  const sellerProfile = sellers.find((seller) => seller.id === sessionUser?.sellerId);
 
   if (!sessionUser) {
     return (
       <section className="section py-12">
-        <div className="card p-6">{t('Connecte-toi pour accéder au profil.', 'Please login to access your profile.')}</div>
+        <div className="card p-6">{t('Connectez-vous pour acceder au profil.', 'Please log in to access the profile.')}</div>
       </section>
     );
   }
@@ -46,7 +48,14 @@ export default function ProfilePage() {
       city: String(formData.get('city')),
       avatar,
       company: String(formData.get('company') ?? ''),
-      about: String(formData.get('about') ?? '')
+      about: String(formData.get('about') ?? ''),
+      activityDescription: String(formData.get('activityDescription') ?? ''),
+      openingHours: String(formData.get('openingHours') ?? ''),
+      closingHours: String(formData.get('closingHours') ?? ''),
+      linkedin: String(formData.get('linkedin') ?? ''),
+      whatsapp: String(formData.get('whatsapp') ?? ''),
+      instagram: String(formData.get('instagram') ?? ''),
+      facebook: String(formData.get('facebook') ?? '')
     });
 
     setStatus(result.message);
@@ -62,7 +71,7 @@ export default function ProfilePage() {
 
   return (
     <section className="section py-12">
-      <div className="mx-auto max-w-3xl rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="mx-auto max-w-4xl rounded-2xl border bg-white p-6 shadow-sm">
         <h1 className="text-3xl font-bold">{t('Mon profil', 'My profile')}</h1>
 
         <div className="mt-6 flex items-center gap-4">
@@ -77,7 +86,7 @@ export default function ProfilePage() {
 
         <form onSubmit={onSubmit} className="mt-6 grid gap-3 md:grid-cols-2">
           <input name="name" defaultValue={sessionUser.name} placeholder={t('Nom complet', 'Full name')} className="rounded-xl border px-3 py-2" />
-          <input name="phone" defaultValue={sessionUser.phone} placeholder={t('Téléphone', 'Phone')} className="rounded-xl border px-3 py-2" />
+          <input name="phone" defaultValue={sessionUser.phone} placeholder={t('Telephone', 'Phone')} className="rounded-xl border px-3 py-2" />
 
           <select
             name="country"
@@ -100,8 +109,36 @@ export default function ProfilePage() {
 
           {sessionUser.role === 'seller' ? (
             <>
-              <input name="company" placeholder={t('Nom de boutique', 'Store name')} className="rounded-xl border px-3 py-2 md:col-span-2" />
-              <textarea name="about" placeholder={t('Description boutique', 'Store description')} className="h-24 rounded-xl border px-3 py-2 md:col-span-2" />
+              <input
+                name="company"
+                defaultValue={sellerProfile?.company}
+                placeholder={t('Nom de boutique', 'Store name')}
+                className="rounded-xl border px-3 py-2 md:col-span-2"
+              />
+              <textarea
+                name="about"
+                defaultValue={sellerProfile?.about}
+                placeholder={t('Resume court de la boutique', 'Short store summary')}
+                className="h-24 rounded-xl border px-3 py-2 md:col-span-2"
+              />
+              <textarea
+                name="activityDescription"
+                defaultValue={sellerProfile?.activityDescription}
+                placeholder={t('Description publique detaillee (minimum 350 caracteres)', 'Detailed public description (minimum 350 characters)')}
+                className="h-40 rounded-xl border px-3 py-2 md:col-span-2"
+              />
+              <input name="openingHours" defaultValue={sellerProfile?.openingHours} placeholder={t('Heure d ouverture', 'Opening hour')} className="rounded-xl border px-3 py-2" />
+              <input name="closingHours" defaultValue={sellerProfile?.closingHours} placeholder={t('Heure de fermeture', 'Closing hour')} className="rounded-xl border px-3 py-2" />
+              <input name="linkedin" defaultValue={sellerProfile?.socialLinks?.linkedin} placeholder="LinkedIn URL" className="rounded-xl border px-3 py-2" />
+              <input name="whatsapp" defaultValue={sellerProfile?.socialLinks?.whatsapp} placeholder="WhatsApp URL" className="rounded-xl border px-3 py-2" />
+              <input name="instagram" defaultValue={sellerProfile?.socialLinks?.instagram} placeholder="Instagram URL" className="rounded-xl border px-3 py-2" />
+              <input name="facebook" defaultValue={sellerProfile?.socialLinks?.facebook} placeholder="Facebook URL" className="rounded-xl border px-3 py-2" />
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 md:col-span-2">
+                {t(
+                  'Le profil public vendeur devient accessible seulement si la description detaillee atteint 350 caracteres et si le texte reste propre et coherent pour l IA.',
+                  'The public seller profile becomes accessible only if the detailed description reaches 350 characters and stays clean and coherent for the AI checks.'
+                )}
+              </p>
             </>
           ) : null}
 
@@ -112,7 +149,7 @@ export default function ProfilePage() {
             </button>
           ) : (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-700 md:col-span-2">
-              {t('Le compte admin ne peut pas être supprimé depuis le profil.', 'Admin account cannot be deleted from profile.')}
+              {t('Le compte admin ne peut pas etre supprime depuis le profil.', 'Admin account cannot be deleted from profile.')}
             </p>
           )}
           {status ? <p className="text-sm md:col-span-2">{status}</p> : null}

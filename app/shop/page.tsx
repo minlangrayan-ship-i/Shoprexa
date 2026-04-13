@@ -8,12 +8,13 @@ import { useSite } from '@/components/site-context';
 import type { RecommendationBlock } from '@/types/marketplace-ai';
 
 export default function ShopPage() {
-  const { locale, country, city, products, users, t } = useSite();
+  const { locale, country, city, products, users, getFollowedSellerIds, t } = useSite();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [offerType, setOfferType] = useState<'all' | 'product' | 'service'>('all');
   const [sort, setSort] = useState<'popular' | 'price_asc' | 'price_desc' | 'rating'>('popular');
   const [recommendationBlocks, setRecommendationBlocks] = useState<RecommendationBlock[]>([]);
+  const followedSellerIds = useMemo(() => getFollowedSellerIds(), [getFollowedSellerIds]);
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => product.sellerCountry === country && product.sellerCity === city);
@@ -82,7 +83,8 @@ export default function ShopPage() {
             country,
             city,
             productId: filteredProducts[0].id,
-            viewedCategorySlug: filteredProducts[0].categorySlug
+            viewedCategorySlug: filteredProducts[0].categorySlug,
+            followedSellerIds
           })
         });
         if (!res.ok) return;
@@ -93,7 +95,7 @@ export default function ShopPage() {
       }
     };
     void run();
-  }, [city, country, filteredProducts, locale]);
+  }, [city, country, filteredProducts, followedSellerIds, locale]);
 
   return (
     <section className="section py-10">

@@ -399,6 +399,7 @@ export default function AdminPage() {
                     <th className="py-2">{t('Commandes réussies', 'Successful orders')}</th>
                     <th className="py-2">{t('Satisfaction', 'Satisfaction')}</th>
                     <th className="py-2">{t('Clients satisfaits', 'Satisfied clients')}</th>
+                    <th className="py-2">{t('Abonnés', 'Followers')}</th>
                     <th className="py-2">{t('Plaintes', 'Complaints')}</th>
                   </tr>
                 </thead>
@@ -411,6 +412,7 @@ export default function AdminPage() {
                       <td className="py-2">{trust.successfulOrders}</td>
                       <td className="py-2">{trust.satisfactionRate}%</td>
                       <td className="py-2">{trust.satisfiedClients}</td>
+                      <td className="py-2">{seller.followerIds?.length ?? 0}</td>
                       <td className="py-2">{trust.complaintCount}</td>
                     </tr>
                   ))}
@@ -443,6 +445,7 @@ export default function AdminPage() {
                     <p>{account.email}</p>
                     <p>WhatsApp: {account.phone}</p>
                     <p>{t('Localisation', 'Location')}: {account.city}, {account.country}</p>
+                    <p>{t('Abonnés', 'Followers')}: {sellers.find((seller) => seller.id === account.sellerId)?.followerIds?.length ?? 0}</p>
                   </li>
                 ))}
               </ul>
@@ -480,7 +483,13 @@ export default function AdminPage() {
           </div>
 
           <div className="rounded-xl border bg-white p-5">
-            <h2 className="text-xl font-semibold">{t('Gestion globale des produits et services (Admin)', 'Global products/services management (Admin)')}</h2>
+            <h2 className="text-xl font-semibold">{t('Moderation du catalogue vendeur', 'Seller catalog moderation')}</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              {t(
+                'L admin peut modifier ou supprimer une offre existante, mais ne peut plus injecter directement de nouveaux produits ou services dans le catalogue d un vendeur.',
+                'Admin can update or delete an existing offer, but can no longer inject new products or services directly into a seller catalog.'
+              )}
+            </p>
             <form onSubmit={onAddProduct} className="mt-3 grid gap-3 md:grid-cols-3">
               <select name="sellerId" className="rounded-lg border px-3 py-2">
                 {sellers.map((seller) => (

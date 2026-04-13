@@ -20,8 +20,33 @@ export type MarketplaceSeller = {
   identityVerified: boolean;
   sellerType: SellerType;
   about: string;
+  activityDescription: string;
+  openingHours: string;
+  closingHours: string;
+  socialLinks?: {
+    linkedin?: string;
+    whatsapp?: string;
+    instagram?: string;
+    facebook?: string;
+  };
+  announcementImages?: string[];
+  followerIds?: string[];
   logoUrl?: string;
   badgeGrantedByAdmin?: boolean;
+};
+
+export type SellerEarningsBreakdown = {
+  orderId: string;
+  productId: string;
+  productName: string;
+  buyerName: string;
+  grossAmount: number;
+  commissionAmount: number;
+  netAmount: number;
+  commissionRate: number;
+  status: SellerOrder['status'];
+  counterpartyLabel?: string;
+  createdAt: string;
 };
 
 export type Dropshipper = {
@@ -179,7 +204,13 @@ const coreSellerProfiles: MarketplaceSeller[] = [
     verified: true,
     identityVerified: true,
     sellerType: 'min_shop',
-    about: 'Solutions energie et cuisine pour foyers, etudiants et petits commerces.'
+    about: 'Solutions energie et cuisine pour foyers, etudiants et petits commerces.',
+    activityDescription: '',
+    openingHours: '08:30',
+    closingHours: '18:00',
+    socialLinks: {},
+    announcementImages: [],
+    followerIds: []
   },
   {
     id: 'seller-2',
@@ -194,7 +225,13 @@ const coreSellerProfiles: MarketplaceSeller[] = [
     verified: true,
     identityVerified: true,
     sellerType: 'company',
-    about: 'Equipements securite et organisation pour familles et commerces urbains.'
+    about: 'Equipements securite et organisation pour familles et commerces urbains.',
+    activityDescription: '',
+    openingHours: '08:00',
+    closingHours: '19:00',
+    socialLinks: {},
+    announcementImages: [],
+    followerIds: []
   },
   {
     id: 'seller-3',
@@ -209,7 +246,13 @@ const coreSellerProfiles: MarketplaceSeller[] = [
     verified: true,
     identityVerified: false,
     sellerType: 'dropshipper',
-    about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.'
+    about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.',
+    activityDescription: '',
+    openingHours: '09:00',
+    closingHours: '18:30',
+    socialLinks: {},
+    announcementImages: [],
+    followerIds: []
   }
 ];
 
@@ -243,6 +286,7 @@ function createVerifiedCitySellers(existing: MarketplaceSeller[]) {
         const citySlug = slugify(cityEntry);
         const countryCode = countryEntry.country.slice(0, 2).toLowerCase();
         const sellerType: SellerType = sequence % 3 === 0 ? 'company' : sequence % 2 === 0 ? 'dropshipper' : 'min_shop';
+        const profileExtras = buildSellerProfileExtras(company, cityEntry, countryEntry.country, sellerType, sequence);
 
         generated.push({
           id: `seller-auto-${citySlug}-${index + 1}`,
@@ -258,7 +302,8 @@ function createVerifiedCitySellers(existing: MarketplaceSeller[]) {
           identityVerified: true,
           badgeGrantedByAdmin: true,
           sellerType,
-          about: `Vendeur verifie Min-shop pour ${cityEntry}, specialise en solutions locales et fiables.`
+          about: `Vendeur verifie Min-shop pour ${cityEntry}, specialise en solutions locales et fiables.`,
+          ...profileExtras
         });
       }
     }
@@ -267,7 +312,29 @@ function createVerifiedCitySellers(existing: MarketplaceSeller[]) {
   return generated;
 }
 
-export const sellerProfiles: MarketplaceSeller[] = [...coreSellerProfiles, ...createVerifiedCitySellers(coreSellerProfiles)];
+export const sellerProfiles: MarketplaceSeller[] = [...coreSellerProfiles, ...createVerifiedCitySellers(coreSellerProfiles)].map(
+  (seller, index) => {
+    const extras = buildSellerProfileExtras(seller.company, seller.city, seller.country, seller.sellerType, index + 1);
+    return {
+      ...seller,
+      activityDescription:
+        seller.activityDescription && seller.activityDescription.trim().length >= 350
+          ? seller.activityDescription
+          : extras.activityDescription,
+      openingHours: seller.openingHours || extras.openingHours,
+      closingHours: seller.closingHours || extras.closingHours,
+      socialLinks:
+        seller.socialLinks && Object.keys(seller.socialLinks).length > 0
+          ? seller.socialLinks
+          : extras.socialLinks,
+      announcementImages:
+        seller.announcementImages && seller.announcementImages.length > 0
+          ? seller.announcementImages
+          : extras.announcementImages,
+      followerIds: seller.followerIds ?? []
+    };
+  }
+);
 
 const coreDropshippers: Dropshipper[] = [
   {
@@ -359,6 +426,45 @@ const imageSets = {
     'https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?w=1400&q=85&auto=format&fit=crop'
   ]
 };
+
+function buildSellerProfileExtras(company: string, city: string, country: string, sellerType: SellerType, sequence = 0) {
+  const socialSlug = slugify(company);
+  const announcementPool =
+    sellerType === 'company'
+      ? imageSets.security
+      : sellerType === 'dropshipper'
+        ? imageSets.mobility
+        : imageSets.solar;
+
+  return {
+    activityDescription: `${buildSellerActivityDescription(company, city, country, sellerType)}${buildSellerSupportText(company, city)}`,
+    openingHours: sellerType === 'company' ? '08:00' : sellerType === 'dropshipper' ? '09:00' : '08:30',
+    closingHours: sellerType === 'company' ? '19:00' : sellerType === 'dropshipper' ? '18:30' : '18:00',
+    socialLinks: {
+      linkedin: `https://www.linkedin.com/company/${socialSlug}`,
+      whatsapp: `https://wa.me/${String(237000000000 + sequence)}`,
+      instagram: `https://www.instagram.com/${socialSlug}`,
+      facebook: `https://www.facebook.com/${socialSlug}`
+    },
+    announcementImages: announcementPool.slice(0, 3),
+    followerIds: [] as string[]
+  };
+}
+
+function buildSellerActivityDescription(company: string, city: string, country: string, sellerType: SellerType) {
+  const businessTypeLabel =
+    sellerType === 'company'
+      ? 'entreprise'
+      : sellerType === 'dropshipper'
+        ? 'dropshipper'
+        : 'vendeur Min-shop';
+
+  return `${company} est un ${businessTypeLabel} implante a ${city}, ${country}, qui accompagne les clients avec une offre claire, credible et adaptee aux usages reels du quotidien. Notre activite couvre la selection de produits utiles, la presentation honnete des services, l explication des benefices concrets, ainsi qu un accompagnement avant et apres commande. Nous mettons l accent sur la qualite de la description, la disponibilite reelle, la transparence sur les delais et un service client rassurant afin que chaque visiteur comprenne exactement ce que nous proposons avant de passer commande.`;
+}
+
+function buildSellerSupportText(company: string, city: string) {
+  return ` ${company} publie egalement des annonces commerciales et des visuels promotionnels pour informer sa communaute sur les nouveautes, les promotions, les periodes de disponibilite et les prestations en cours. Notre equipe reste joignable depuis ${city} pour repondre aux questions, recommander les produits les plus adaptes et proposer une experience d achat plus fluide, plus humaine et mieux contextualisee pour les besoins locaux, professionnels et familiaux.`;
+}
 
 export const marketplaceProducts: MarketplaceProduct[] = [
   {
@@ -1127,6 +1233,47 @@ export function getSellerDashboardData(
   };
 }
 
+export function getSellerEarningsBreakdown(
+  sellerId: string,
+  products: MarketplaceProduct[],
+  orders: SellerOrder[],
+  recruitmentOffers: RecruitmentOffer[],
+  sellers: MarketplaceSeller[]
+) {
+  return orders
+    .filter((order) => order.sellerId === sellerId)
+    .map((order) => {
+      const product = products.find((entry) => entry.id === order.productId);
+      const relatedOffer = recruitmentOffers.find(
+        (offer) =>
+          offer.companySellerId === sellerId &&
+          offer.status === 'accepted' &&
+          offer.productIds.includes(order.productId)
+      );
+      const dropshipper = relatedOffer ? sellers.find((seller) => seller.id === relatedOffer.targetSellerId) : null;
+      const commissionRate = order.status === 'delivered' && relatedOffer ? relatedOffer.commissionRate : 0;
+      const commissionAmount = Number(((order.total * commissionRate) / 100).toFixed(0));
+      const netAmount = order.total - commissionAmount;
+
+      const row: SellerEarningsBreakdown = {
+        orderId: order.id,
+        productId: order.productId,
+        productName: product?.name ?? order.productId,
+        buyerName: order.customerName,
+        grossAmount: order.total,
+        commissionAmount,
+        netAmount,
+        commissionRate,
+        status: order.status,
+        counterpartyLabel: dropshipper ? dropshipper.company : undefined,
+        createdAt: order.createdAt
+      };
+
+      return row;
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export function findUserByCredentials(users: DemoUser[], email: string, password: string) {
   return users.find((user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password) ?? null;
 }
@@ -1134,3 +1281,4 @@ export function findUserByCredentials(users: DemoUser[], email: string, password
 export function findSellerBySlug(slug: string) {
   return sellerProfiles.find((seller) => seller.slug === slug) ?? null;
 }
+

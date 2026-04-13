@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   africaCountries,
   countryPhonePrefixes,
@@ -55,6 +55,13 @@ type ProfileUpdatePayload = {
   avatar?: string;
   company?: string;
   about?: string;
+  activityDescription?: string;
+  openingHours?: string;
+  closingHours?: string;
+  linkedin?: string;
+  whatsapp?: string;
+  instagram?: string;
+  facebook?: string;
 };
 
 type AdminNotification = {
@@ -95,6 +102,7 @@ type SiteContextValue = {
   adminNotifications: AdminNotification[];
   dropshipperCatalogProposals: DropshipperCatalogProposal[];
   siteVisits: number;
+  getFollowedSellerIds: (userId?: string) => string[];
   trackProductView: (productId: string) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; user?: SessionUser };
   register: (payload: RegisterPayload) => { ok: boolean; message: string; user?: SessionUser };
@@ -150,6 +158,7 @@ type SiteContextValue = {
     dropshipperName: string;
     productIds: string[];
   }) => { ok: boolean; message: string };
+  toggleSellerSubscription: (sellerId: string) => { ok: boolean; message: string; isFollowing?: boolean };
   deleteCurrentAccount: () => { ok: boolean; message: string };
   t: (fr: string, en: string) => string;
 };
@@ -531,7 +540,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           verified: false,
           identityVerified: false,
           sellerType: nextSellerType,
-          about: 'Nouveau vendeur Min-shop.'
+          about: 'Nouveau vendeur Min-shop.',
+          activityDescription: '',
+          openingHours: '08:30',
+          closingHours: '18:00',
+          socialLinks: {},
+          announcementImages: [],
+          followerIds: []
         },
         ...current
       ]);
@@ -547,6 +562,12 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     setSessionUser(null);
     void fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
   };
+
+  const getFollowedSellerIds = useCallback((userId?: string) => {
+    const activeUserId = userId ?? sessionUser?.id;
+    if (!activeUserId) return [];
+    return sellers.filter((seller) => seller.followerIds?.includes(activeUserId)).map((seller) => seller.id);
+  }, [sellers, sessionUser?.id]);
 
   const updateProfile = (payload: ProfileUpdatePayload) => {
     if (!sessionUser) return { ok: false, message: t('Session introuvable.', 'Session not found.') };
@@ -578,6 +599,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
                 city: payload.city,
                 company: payload.company ?? seller.company,
                 about: payload.about ?? seller.about,
+                activityDescription: payload.activityDescription ?? seller.activityDescription,
+                openingHours: payload.openingHours ?? seller.openingHours,
+                closingHours: payload.closingHours ?? seller.closingHours,
+                socialLinks: {
+                  linkedin: payload.linkedin ?? seller.socialLinks?.linkedin,
+                  whatsapp: payload.whatsapp ?? seller.socialLinks?.whatsapp,
+                  instagram: payload.instagram ?? seller.socialLinks?.instagram,
+                  facebook: payload.facebook ?? seller.socialLinks?.facebook
+                },
                 logoUrl: payload.avatar ?? seller.logoUrl
               }
             : seller
@@ -599,6 +629,46 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     );
 
     return { ok: true, message: t('Profil mis à jour.', 'Profile updated.') };
+  };
+
+  const toggleSellerSubscription = (sellerId: string) => {
+    if (!sessionUser) {
+      return { ok: false, message: t('Connecte-toi avec un compte client pour t abonner.', 'Please sign in with a customer account to follow a seller.') };
+    }
+    if (sessionUser.role !== 'client') {
+      return { ok: false, message: t('Seuls les clients peuvent s abonner a un vendeur.', 'Only customer accounts can follow a seller.') };
+    }
+
+    const targetSeller = sellers.find((seller) => seller.id === sellerId);
+    if (!targetSeller) {
+      return { ok: false, message: t('Vendeur introuvable.', 'Seller not found.') };
+    }
+
+    if (sessionUser.sellerId && sessionUser.sellerId === sellerId) {
+      return { ok: false, message: t('Vous ne pouvez pas vous abonner a votre propre boutique.', 'You cannot follow your own store.') };
+    }
+
+    let isFollowing = false;
+    setSellers((current) =>
+      current.map((seller) => {
+        if (seller.id !== sellerId) return seller;
+        const followerIds = new Set(seller.followerIds ?? []);
+        if (followerIds.has(sessionUser.id)) {
+          followerIds.delete(sessionUser.id);
+          isFollowing = false;
+        } else {
+          followerIds.add(sessionUser.id);
+          isFollowing = true;
+        }
+        return { ...seller, followerIds: Array.from(followerIds) };
+      })
+    );
+
+    return {
+      ok: true,
+      message: isFollowing ? t('Abonnement enregistre.', 'Follow saved.') : t('Abonnement retire.', 'Follow removed.'),
+      isFollowing
+    };
   };
 
   const addReview = (review: Omit<SellerReview, 'id' | 'createdAt'>) => {
@@ -713,6 +783,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     for (const item of items) {
       const product = products.find((entry) => entry.id === item.id);
       if (!product) continue;
+      const acceptedOffer = recruitmentOffers.find(
+        (offer) =>
+          offer.companySellerId === product.sellerId &&
+          offer.status === 'accepted' &&
+          offer.productIds.includes(product.id)
+      );
+      const dropshipper = acceptedOffer ? sellers.find((seller) => seller.id === acceptedOffer.targetSellerId) : null;
       nextOrders.push({
         id: `ord-${Date.now()}-${item.id}`,
         sellerId: product.sellerId,
@@ -726,7 +803,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       setAdminNotifications((current) => [
         {
           id: `notif-${Date.now()}-${item.id}`,
-          message: `Transaction validée: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name})`,
+          message: acceptedOffer && dropshipper
+            ? `Transaction validee: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name}). Commande transmise a l entreprise et au dropshipper ${dropshipper.company}. Commission prevue: ${acceptedOffer.commissionRate}%.`
+            : `Transaction validee: ${sessionUser.name} -> ${product.companyName} (${item.quantity} x ${product.name})`,
           createdAt
         },
         ...current
@@ -825,7 +904,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
   const categoryLabels = CATEGORY_LABELS;
 
-  const adminAddProduct = (payload: {
+  const adminAddProduct = (_payload: {
     sellerId: string;
     name: string;
     description: string;
@@ -840,37 +919,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     serviceAvailability?: string;
     targetCountries?: string[];
   }) => {
+    void _payload;
     if (sessionUser?.role !== 'admin') return { ok: false, message: t('Action réservée admin.', 'Admin-only action.') };
-    const seller = sellers.find((entry) => entry.id === payload.sellerId);
-    if (!seller) return { ok: false, message: t('Vendeur introuvable.', 'Seller not found.') };
-
-    const product: MarketplaceProduct = {
-      id: `prod-${Date.now()}`,
-      slug: `${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-4)}`,
-      name: payload.name,
-      description: payload.description,
-      price: payload.price,
-      oldPrice: payload.oldPrice && payload.oldPrice > payload.price ? payload.oldPrice : null,
-      stock: seller.sellerType === 'dropshipper' ? 0 : payload.stock,
-      images: payload.images.length ? payload.images : ['https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=1400&q=85&auto=format&fit=crop'],
-      imageMeta: payload.imageMeta,
-      category: categoryLabels[payload.categorySlug] ?? 'Divers',
-      categorySlug: payload.categorySlug,
-      problemTag: 'Catalogue admin',
-      sellerId: seller.id,
-      companyName: seller.company,
-      sellerCountry: seller.country,
-      sellerCity: seller.city,
-      badges: ['new'],
-      averageRating: 4.0,
-      viewCount: 0,
-      kind: payload.kind ?? 'product',
-      serviceDuration: payload.serviceDuration,
-      serviceAvailability: payload.serviceAvailability,
-      targetCountries: payload.targetCountries?.length ? payload.targetCountries : [seller.country]
+    return {
+      ok: false,
+      message: t(
+        'L admin peut moderer, mettre a jour ou supprimer une offre, mais ne peut pas ajouter une offre dans le catalogue d un vendeur.',
+        'Admin can moderate, update, or delete an offer, but cannot add a new offer to a seller catalog.'
+      )
     };
-    setProducts((current) => [product, ...current]);
-    return { ok: true, message: t('Produit ajouté par admin.', 'Product added by admin.') };
   };
 
   const companySendRecruitmentOffer = (targetSellerId: string, productIds: string[], commissionRate: number) => {
@@ -976,7 +1033,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           verified: false,
           identityVerified: false,
           sellerType: 'min_shop',
-          about: 'Nouveau vendeur Min-shop.'
+          about: 'Nouveau vendeur Min-shop.',
+          activityDescription: '',
+          openingHours: '08:30',
+          closingHours: '18:00',
+          socialLinks: {},
+          announcementImages: [],
+          followerIds: []
         },
         ...current
       ]);
@@ -1114,6 +1177,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         adminNotifications,
         dropshipperCatalogProposals,
         siteVisits,
+        getFollowedSellerIds,
         trackProductView,
         login,
         register,
@@ -1135,6 +1199,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         adminChangeUserRole,
         adminDeleteUser,
         proposeDropshipperCatalog,
+        toggleSellerSubscription,
         deleteCurrentAccount,
         t
       }}

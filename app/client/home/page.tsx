@@ -7,12 +7,18 @@ import { getRegionalDemandAdjustedRating, rankSellersByRating } from '@/lib/mock
 import { useSite } from '@/components/site-context';
 
 export default function ClientHomePage() {
-  const { sessionUser, country, city, products, sellers, reviews, testimonials, users, addPlatformComment, t } = useSite();
+  const { sessionUser, country, city, products, sellers, reviews, testimonials, users, addPlatformComment, getFollowedSellerIds, t } = useSite();
   const [commentStatus, setCommentStatus] = useState('');
+  const followedSellerIds = getFollowedSellerIds();
 
   const localProducts = useMemo(() => {
     return products
       .filter((product) => product.sellerCountry === country && product.sellerCity === city)
+      .sort((a, b) => {
+        const aFollowed = followedSellerIds.includes(a.sellerId) ? 1 : 0;
+        const bFollowed = followedSellerIds.includes(b.sellerId) ? 1 : 0;
+        return bFollowed - aFollowed;
+      })
       .slice(0, 6)
       .map((product) => ({
         id: product.id,
@@ -37,7 +43,7 @@ export default function ClientHomePage() {
         serviceDuration: product.serviceDuration,
         serviceAvailability: product.serviceAvailability
       }));
-  }, [city, country, products, users]);
+  }, [city, country, followedSellerIds, products, users]);
 
   const preferenceProducts = useMemo(() => {
     const preferred = sessionUser?.preferences ?? [];

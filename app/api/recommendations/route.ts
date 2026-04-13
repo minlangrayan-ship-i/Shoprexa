@@ -11,7 +11,8 @@ const schema = z.object({
   city: z.string().optional(),
   productId: z.string().optional(),
   budget: z.number().optional(),
-  viewedCategorySlug: z.string().optional()
+  viewedCategorySlug: z.string().optional(),
+  followedSellerIds: z.array(z.string()).optional()
 });
 
 export async function POST(request: Request) {

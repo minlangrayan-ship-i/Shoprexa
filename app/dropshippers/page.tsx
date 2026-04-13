@@ -6,7 +6,7 @@ import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
 
 export default function DropshippersPage() {
-  const { country, sessionUser, dropshipperCatalogProposals, proposeDropshipperCatalog, t } = useSite();
+  const { country, sessionUser, sellers, reviews, dropshipperCatalogProposals, proposeDropshipperCatalog, t } = useSite();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [zone, setZone] = useState<'all' | 'country'>('all');
   const [status, setStatus] = useState('');
@@ -17,12 +17,22 @@ export default function DropshippersPage() {
 
   const filtered = useMemo(
     () =>
-      dropshippers.filter((entry) => {
-        if (zone === 'country' && entry.country !== country) return false;
-        if (verifiedOnly && !entry.email.includes('@')) return false;
-        return true;
-      }),
-    [country, verifiedOnly, zone]
+      dropshippers
+        .filter((entry) => {
+          if (zone === 'country' && entry.country !== country) return false;
+          if (verifiedOnly && !entry.email.includes('@')) return false;
+          return true;
+        })
+        .sort((a, b) => {
+          const sellerA = sellers.find((seller) => seller.email.toLowerCase() === a.email.toLowerCase() || seller.company === a.name);
+          const sellerB = sellers.find((seller) => seller.email.toLowerCase() === b.email.toLowerCase() || seller.company === b.name);
+          const companyReviewsA = reviews.filter((review) => review.sellerId === sellerA?.id && review.customerName.includes('(Entreprise)'));
+          const companyReviewsB = reviews.filter((review) => review.sellerId === sellerB?.id && review.customerName.includes('(Entreprise)'));
+          const scoreA = companyReviewsA.reduce((sum, review) => sum + review.rating, 0) / Math.max(1, companyReviewsA.length);
+          const scoreB = companyReviewsB.reduce((sum, review) => sum + review.rating, 0) / Math.max(1, companyReviewsB.length);
+          return scoreB - scoreA;
+        }),
+    [country, reviews, sellers, verifiedOnly, zone]
   );
 
   if (!canAccess) {

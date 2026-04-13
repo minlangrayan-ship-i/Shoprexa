@@ -17,6 +17,7 @@ export type ProductLite = {
   id: string;
   slug: string;
   name: string;
+  sellerId: string;
   price: number;
   category: string;
   categorySlug: string;
@@ -72,6 +73,7 @@ export type RecommendationRequest = {
   productId?: string;
   budget?: number;
   viewedCategorySlug?: string;
+  followedSellerIds?: string[];
 };
 
 export type RecommendationBlock = {

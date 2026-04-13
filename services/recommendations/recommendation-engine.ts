@@ -7,6 +7,7 @@ function mapLite() {
     id: product.id,
     slug: product.slug,
     name: product.name,
+    sellerId: product.sellerId,
     price: product.price,
     category: product.category,
     categorySlug: product.categorySlug,
@@ -32,6 +33,7 @@ function scoreProduct(
   if (context.city && product.city === context.city) score += 2;
   if (context.budget && product.price <= context.budget) score += 2;
   if (targetCategory && product.categorySlug === targetCategory) score += 3;
+  if (context.followedSellerIds?.includes(product.sellerId)) score += 4;
   if (product.badges.includes('popular')) score += 2;
   score += product.averageRating;
   score += Math.min(2, product.viewCount / 250);
