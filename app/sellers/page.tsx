@@ -225,7 +225,11 @@ export default function SellersPage() {
           <p className="mt-2 text-sm text-slate-600">
             {t('Seuls les clients inscrits et connectés peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.')}
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            {t('La note d’un produit ou d’un service n’est autorisée qu’après un achat finalisé.', 'A product or service can be rated only after a completed purchase.')}
+          </p>
+        )}
         <form onSubmit={onReviewSubmit} className="mt-4 grid gap-3 md:grid-cols-2">
           <select name="sellerId" required className="rounded-lg border px-3 py-2">
             <option value="">{t('Choisir un vendeur', 'Choose a vendor')}</option>

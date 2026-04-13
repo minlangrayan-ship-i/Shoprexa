@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { getRegionalDemandAdjustedRating, rankSellersByRating } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
 
 export default function ClientHomePage() {
-  const { sessionUser, country, city, products, sellers, reviews, testimonials, users, t } = useSite();
+  const { sessionUser, country, city, products, sellers, reviews, testimonials, users, addPlatformComment, t } = useSite();
+  const [commentStatus, setCommentStatus] = useState('');
 
   const localProducts = useMemo(() => {
     return products
@@ -52,12 +53,23 @@ export default function ClientHomePage() {
 
   const topSeller = useMemo(() => rankSellersByRating(reviews, country, city, sellers)[0], [city, country, reviews, sellers]);
 
+  const onPlatformCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = addPlatformComment({
+      rating: Number(formData.get('rating')),
+      comment: String(formData.get('comment'))
+    });
+    setCommentStatus(result.message);
+    if (result.ok) event.currentTarget.reset();
+  };
+
   if (!sessionUser || sessionUser.role !== 'client') {
     return (
       <section className="section py-12">
         <div className="card p-6">
           <h1 className="text-2xl font-bold">{t('Espace client', 'Client area')}</h1>
-          <p className="mt-2 text-slate-600">{t('Connectez-vous avec un compte client pour voir votre page d accueil personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
+          <p className="mt-2 text-slate-600">{t('Connectez-vous avec un compte client pour voir votre page d’accueil personnalisée.', 'Please login with a client account to view your personalized homepage.')}</p>
           <Link href="/auth/login" className="mt-4 inline-block rounded-lg bg-dark px-4 py-2 text-white">{t('Aller à la connexion', 'Go to login')}</Link>
         </div>
       </section>
@@ -125,6 +137,27 @@ export default function ClientHomePage() {
             </article>
           ))}
         </div>
+      </div>
+
+      <div className="mt-10 rounded-xl border bg-white p-5">
+        <h3 className="text-lg font-bold">{t('Donner votre avis sur Min-shop', 'Share your feedback about Min-shop')}</h3>
+        <p className="mt-2 text-sm text-slate-600">
+          {t(
+            'Vous pouvez commenter la plateforme à tout moment. Les avis sur un vendeur restent réservés aux achats finalisés.',
+            'You can comment on the platform at any time. Vendor reviews remain reserved for completed purchases.'
+          )}
+        </p>
+        <form onSubmit={onPlatformCommentSubmit} className="mt-4 grid gap-3 md:grid-cols-2">
+          <select name="rating" required className="rounded-lg border px-3 py-2">
+            <option value="">{t('Votre note globale', 'Your overall rating')}</option>
+            {[5, 4, 3, 2, 1].map((rate) => <option key={rate} value={rate}>{rate}/5</option>)}
+          </select>
+          <input name="comment" required placeholder={t('Votre commentaire sur la plateforme', 'Your platform comment')} className="rounded-lg border px-3 py-2" />
+          <button className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white md:col-span-2">
+            {t('Envoyer mon commentaire', 'Submit my comment')}
+          </button>
+          {commentStatus ? <p className="text-sm md:col-span-2">{commentStatus}</p> : null}
+        </form>
       </div>
     </section>
   );

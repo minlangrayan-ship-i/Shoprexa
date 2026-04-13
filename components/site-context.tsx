@@ -100,6 +100,7 @@ type SiteContextValue = {
   logout: () => void;
   updateProfile: (payload: ProfileUpdatePayload) => { ok: boolean; message: string };
   addReview: (review: Omit<SellerReview, 'id' | 'createdAt'>) => { ok: boolean; message: string };
+  addPlatformComment: (payload: { rating: number; comment: string }) => { ok: boolean; message: string };
   addCompanyReviewForPartner: (payload: { targetSellerId: string; rating: number; comment: string }) => { ok: boolean; message: string };
   recordClientOrder: (items: CartItem[]) => void;
   addSellerProduct: (payload: {
@@ -187,7 +188,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
   const [complaints] = useState<SellerComplaint[]>(seededSellerComplaints);
-  const [testimonials] = useState<ClientTestimonial[]>(seededTestimonials);
+  const [testimonials, setTestimonials] = useState<ClientTestimonial[]>(seededTestimonials);
   const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [dropshipperCatalogProposals, setDropshipperCatalogProposals] = useState<DropshipperCatalogProposal[]>([]);
@@ -218,6 +219,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         products?: MarketplaceProduct[];
         orders?: SellerOrder[];
         reviews?: SellerReview[];
+        testimonials?: ClientTestimonial[];
         recruitmentOffers?: RecruitmentOffer[];
         adminNotifications?: AdminNotification[];
         dropshipperCatalogProposals?: DropshipperCatalogProposal[];
@@ -233,6 +235,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       if (parsed.products?.length) setProducts(parsed.products);
       if (parsed.orders?.length) setOrders(parsed.orders);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
+      if (parsed.testimonials?.length) setTestimonials(parsed.testimonials);
       if (parsed.recruitmentOffers?.length) {
         setRecruitmentOffers(
           parsed.recruitmentOffers.map((offer) => ({ ...offer, commissionRate: offer.commissionRate ?? 10 }))
@@ -353,6 +356,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         products,
         orders,
         reviews,
+        testimonials,
         recruitmentOffers,
         adminNotifications,
         dropshipperCatalogProposals,
@@ -369,6 +373,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     products,
     orders,
     reviews,
+    testimonials,
     recruitmentOffers,
     adminNotifications,
     dropshipperCatalogProposals,
@@ -550,12 +555,18 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       return { ok: false, message: t('Seuls les clients inscrits et connectés peuvent noter un vendeur.', 'Only registered, logged-in clients can rate a seller.') };
     }
     const hasPurchasedFromSeller = orders.some(
-      (order) => order.customerName === sessionUser.name && order.sellerId === review.sellerId
+      (order) =>
+        order.customerName === sessionUser.name &&
+        order.sellerId === review.sellerId &&
+        order.status === 'delivered'
     );
     if (!hasPurchasedFromSeller) {
       return {
         ok: false,
-        message: t('Tu peux noter uniquement un vendeur avec lequel tu as déjà acheté.', 'You can review only sellers you already purchased from.')
+        message: t(
+          'Tu peux noter un produit ou un service seulement après un achat finalisé.',
+          'You can rate a product or service only after a completed purchase.'
+        )
       };
     }
 
@@ -568,6 +579,43 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       ...current
     ]);
     return { ok: true, message: t('Avis enregistré. Merci !', 'Review submitted. Thank you!') };
+  };
+
+  const addPlatformComment = (payload: { rating: number; comment: string }) => {
+    if (!sessionUser || sessionUser.role !== 'client') {
+      return {
+        ok: false,
+        message: t(
+          'Seuls les clients inscrits et connectés peuvent commenter la plateforme.',
+          'Only registered, logged-in clients can comment on the platform.'
+        )
+      };
+    }
+
+    const createdAt = new Date().toISOString().slice(0, 10);
+    const nextComment: ClientTestimonial = {
+      id: `tes-${Date.now()}`,
+      country: sessionUser.country,
+      city: sessionUser.city,
+      name: sessionUser.name,
+      rating: payload.rating,
+      comment: payload.comment
+    };
+
+    setTestimonials((current) => [nextComment, ...current]);
+    setAdminNotifications((current) => [
+      {
+        id: `notif-comment-${Date.now()}`,
+        message: `Nouveau commentaire plateforme de ${sessionUser.name}: ${payload.comment}`,
+        createdAt
+      },
+      ...current
+    ]);
+
+    return {
+      ok: true,
+      message: t('Votre commentaire sur Min-shop a été enregistré.', 'Your Min-shop platform comment has been recorded.')
+    };
   };
 
   const addCompanyReviewForPartner = (payload: { targetSellerId: string; rating: number; comment: string }) => {
@@ -1020,6 +1068,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateProfile,
         addReview,
+        addPlatformComment,
         addCompanyReviewForPartner,
         recordClientOrder,
         addSellerProduct,

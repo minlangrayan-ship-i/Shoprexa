@@ -22,6 +22,7 @@ export default function AdminPage() {
     orders,
     reviews,
     complaints,
+    testimonials,
     adminNotifications,
     siteVisits,
     adminChangeUserRole,
@@ -316,6 +317,20 @@ export default function AdminPage() {
                 <p key={item.id} className="rounded-lg border px-3 py-2">{item.createdAt} - {item.message}</p>
               ))}
               {adminNotifications.length === 0 ? <p className="text-slate-500">{t('Aucune notification pour le moment.', 'No notifications yet.')}</p> : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-white p-5">
+            <h2 className="text-xl font-semibold">{t('Commentaires plateforme', 'Platform comments')}</h2>
+            <div className="mt-3 space-y-3 text-sm">
+              {testimonials.slice(0, 8).map((item) => (
+                <article key={item.id} className="rounded-lg border p-3">
+                  <p className="font-semibold">{item.name}</p>
+                  <p className="text-xs text-slate-500">{item.city}, {item.country}</p>
+                  <p className="text-xs text-amber-600">{item.rating}/5</p>
+                  <p className="mt-1 text-slate-600">{item.comment}</p>
+                </article>
+              ))}
             </div>
           </div>
 
