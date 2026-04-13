@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSite } from '@/components/site-context';
+import { getSellerTrustStats } from '@/lib/mock-marketplace';
 
 const links = [
   { href: '/seller/dashboard', fr: 'Tableau de bord', en: 'Dashboard' },
@@ -16,14 +17,37 @@ const links = [
 
 export function SellerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { sessionUser, t } = useSite();
+  const { sessionUser, sellers, products, orders, reviews, complaints, t } = useSite();
 
   if (!sessionUser || sessionUser.role !== 'seller') {
-    return <section className="section py-12"><div className="card p-6">{t('Accès vendeur requis.', 'Seller access required.')}</div></section>;
+    return (
+      <section className="section py-12">
+        <div className="card p-6">{t('Acces vendeur requis.', 'Seller access required.')}</div>
+      </section>
+    );
   }
+
+  const currentSeller = sellers.find((seller) => seller.id === sessionUser.sellerId);
+  const trust = currentSeller ? getSellerTrustStats(currentSeller, products, reviews, orders, complaints) : null;
+  const showProfileWarning = Boolean(currentSeller) && !trust?.profileAccessible;
 
   return (
     <section className="section py-10">
+      {showProfileWarning ? (
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-semibold">{t('Profil vendeur incomplet', 'Incomplete seller profile')}</p>
+          <p className="mt-1">
+            {t(
+              'Votre profil n est pas encore finalise. Tant qu il n est pas valide, il ne sera accessible a personne sur la plateforme.',
+              'Your seller profile is not finalized yet. Until it is validated, it will not be accessible to anyone on the platform.'
+            )}
+          </p>
+          <Link href="/profile" className="mt-3 inline-block rounded-lg bg-dark px-3 py-2 text-xs font-semibold text-white">
+            {t('Finaliser mon profil', 'Complete my profile')}
+          </Link>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-2xl border bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase text-slate-500">{t('Espace vendeur', 'Seller area')}</p>
