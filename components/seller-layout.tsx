@@ -12,6 +12,7 @@ const links = [
   { href: '/seller/stock', fr: 'Gestion stock', en: 'Stock management' },
   { href: '/seller/orders', fr: 'Commandes', en: 'Orders' },
   { href: '/seller/stats', fr: 'Statistiques', en: 'Statistics' },
+  { href: '/seller/location', fr: 'Localisation', en: 'Location' },
   { href: '/seller/profile', fr: 'Profil vendeur', en: 'Seller profile' }
 ];
 

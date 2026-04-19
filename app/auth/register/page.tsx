@@ -2,8 +2,10 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { africaCountries, countryPhonePrefixes, marketplaceCategories } from '@/lib/mock-marketplace';
+import { countryPhonePrefixes, marketplaceCategories } from '@/lib/mock-marketplace';
+import { getCityDistricts, getLaunchCities, launchCountryName } from '@/lib/geo-config';
 import { useSite } from '@/components/site-context';
+import { GoogleAuthButton } from '@/components/auth/google-auth-button';
 
 function toServerRole(role: 'client' | 'seller' | 'admin') {
   if (role === 'admin') return 'ADMIN';
@@ -14,13 +16,15 @@ function toServerRole(role: 'client' | 'seller' | 'admin') {
 export default function RegisterPage() {
   const router = useRouter();
   const { register, t } = useSite();
-  const [country, setCountry] = useState(africaCountries[0].country);
+  const [country] = useState(launchCountryName);
+  const [city, setCity] = useState(getLaunchCities()[0]);
   const [role, setRole] = useState<'client' | 'seller'>('client');
   const [preferences, setPreferences] = useState<string[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const cities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
+  const cities = useMemo(() => getLaunchCities(), []);
+  const districts = useMemo(() => getCityDistricts(city), [city]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,8 +38,9 @@ export default function RegisterPage() {
       password: String(formData.get('password')),
       role: String(formData.get('role')) as 'client' | 'seller',
       sellerType: String(formData.get('sellerType') ?? 'min_shop') as 'min_shop' | 'dropshipper' | 'company',
-      country: String(formData.get('country')),
+      country: launchCountryName,
       city: String(formData.get('city')),
+      district: String(formData.get('district') ?? ''),
       preferences
     };
 
@@ -104,14 +109,18 @@ export default function RegisterPage() {
             <input value="Client standard" disabled className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-500" />
           )}
 
-          <select required name="country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded-xl border px-3 py-2">
-            {africaCountries.map((entry) => (
-              <option key={entry.country} value={entry.country}>{entry.country}</option>
+          <select required name="country" value={country} disabled className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-600">
+            <option value={launchCountryName}>{launchCountryName}</option>
+          </select>
+
+          <select required name="city" value={city} onChange={(event) => setCity(event.target.value)} className="rounded-xl border px-3 py-2">
+            {cities.map((entry) => (
+              <option key={entry} value={entry}>{entry}</option>
             ))}
           </select>
 
-          <select required name="city" className="rounded-xl border px-3 py-2 md:col-span-2">
-            {cities.map((entry) => (
+          <select required name="district" className="rounded-xl border px-3 py-2 md:col-span-2">
+            {districts.map((entry) => (
               <option key={entry} value={entry}>{entry}</option>
             ))}
           </select>
@@ -145,6 +154,10 @@ export default function RegisterPage() {
           </button>
           {status ? <p className="text-sm md:col-span-2">{status}</p> : null}
         </form>
+
+        <div className="mt-4">
+          <GoogleAuthButton label={t('Continuer avec Google', 'Continue with Google')} />
+        </div>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireRoles } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
+import { computeSellerTrustScore } from '@/lib/trust/compute-seller-trust';
 
 export async function GET(request: Request) {
   const access = requireRoles(request, ['SELLER', 'ADMIN']);
@@ -44,11 +45,14 @@ export async function GET(request: Request) {
     ? await db.commission.aggregate({ where: sellerId ? { sellerId, status: 'PENDING' } : { status: 'PENDING' }, _sum: { amount: true } })
     : { _sum: { amount: 0 } };
 
+  const trust = sellerId ? await computeSellerTrustScore(sellerId) : null;
+
   return NextResponse.json({
     products,
     orders: orderItems.length,
     paidOrders,
     earnedCommissions: Number(earnedCommissions._sum?.amount ?? 0),
-    pendingCommissions: Number(pendingCommissions._sum?.amount ?? 0)
+    pendingCommissions: Number(pendingCommissions._sum?.amount ?? 0),
+    sellerTrust: trust
   });
 }

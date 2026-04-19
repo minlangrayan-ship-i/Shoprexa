@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { getSellerTrustStats, marketplaceCategories } from '@/lib/mock-marketplace';
 import { formatPrice } from '@/lib/utils';
 import { useSite } from '@/components/site-context';
+import { AdminShopyiaLab } from '@/components/admin-shopyia-lab';
 import { verifyProductConsistency } from '@/services/verification/product-consistency';
 import { buildAiHealthAlerts } from '@/services/ai/health-alerts';
 import type { AiHealthSnapshot, AiHealthWindow } from '@/types/marketplace-ai';
@@ -15,6 +16,8 @@ type TrustSort = 'suspect_first' | 'score_asc' | 'score_desc';
 export default function AdminPage() {
   const {
     locale,
+    country,
+    city,
     sessionUser,
     users,
     sellers,
@@ -173,6 +176,49 @@ export default function AdminPage() {
     [productTrustRows]
   );
 
+  const collectedImageStats = useMemo(() => {
+    let totalImages = 0;
+    let uploadImages = 0;
+    let catalogImages = 0;
+    let imagesWithMeta = 0;
+    let totalSizeKb = 0;
+    let totalPixels = 0;
+    let dimensionCount = 0;
+
+    for (const product of products) {
+      totalImages += product.images.length;
+      const metas = product.imageMeta ?? [];
+      for (let index = 0; index < product.images.length; index += 1) {
+        const meta = metas[index];
+        if (meta) {
+          imagesWithMeta += 1;
+          if (typeof meta.sizeKb === 'number') totalSizeKb += meta.sizeKb;
+          if (typeof meta.width === 'number' && typeof meta.height === 'number') {
+            totalPixels += meta.width * meta.height;
+            dimensionCount += 1;
+          }
+          if (meta.source === 'upload') uploadImages += 1;
+          if (meta.source === 'catalog') catalogImages += 1;
+        } else {
+          catalogImages += 1;
+        }
+      }
+    }
+
+    const averageSizeKb = imagesWithMeta ? Math.round(totalSizeKb / imagesWithMeta) : 0;
+    const averageResolution = dimensionCount ? Math.round(totalPixels / dimensionCount) : 0;
+
+    return {
+      productsAnalyzed: productTrustRows.length,
+      totalImages,
+      uploadImages,
+      catalogImages,
+      imagesWithMeta,
+      averageSizeKb,
+      averageResolution
+    };
+  }, [productTrustRows.length, products]);
+
   const activeAiWindow = aiHealth?.windows[aiWindow] ?? null;
   const aiAlerts = useMemo(
     () =>
@@ -196,6 +242,34 @@ export default function AdminPage() {
     deliveryConsultations: getRouteRequests('/api/delivery-estimate'),
     recommendationClicks: activeAiWindow?.events.recommendationClicks ?? 0
   };
+
+  const exportCollectedAiData = useCallback(() => {
+    const now = new Date().toISOString();
+    const payload = {
+      exportedAt: now,
+      aiWindow,
+      aiHealthWindow: activeAiWindow,
+      listingStatusCounts,
+      imageCollectionStats: collectedImageStats,
+      products: filteredTrustRows.slice(0, 100).map((row) => ({
+        id: row.product.id,
+        name: row.product.name,
+        category: row.product.category,
+        seller: row.product.companyName,
+        trustScore: row.trust.score,
+        trustStatus: row.trust.status,
+        alerts: row.trust.alerts
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `min-shop-ai-collected-data-${now.slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [activeAiWindow, aiWindow, collectedImageStats, filteredTrustRows, listingStatusCounts]);
 
   if (!sessionUser || sessionUser.role !== 'admin') {
     return (
@@ -267,6 +341,31 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              <div className="rounded-lg border bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">{t('Données collectées IA (plateforme)', 'AI collected platform data')}</p>
+                  <button onClick={exportCollectedAiData} className="rounded border bg-white px-2 py-1 text-xs font-semibold">
+                    {t('Exporter JSON', 'Export JSON')}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-600">
+                  {t(
+                    'Cadre de collecte Shopyia : produits, clients, logistique, confiance et comportement pour personnaliser, recommander et optimiser la conversion.',
+                    'Shopyia collection framework: products, customers, logistics, trust and behavior to personalize, recommend and optimize conversion.'
+                  )}
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Produits analysés', 'Analyzed products')}</p><p className="text-lg font-bold">{collectedImageStats.productsAnalyzed}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Images totales', 'Total images')}</p><p className="text-lg font-bold">{collectedImageStats.totalImages}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Images upload vendeur', 'Seller-uploaded images')}</p><p className="text-lg font-bold">{collectedImageStats.uploadImages}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Images catalogue', 'Catalog images')}</p><p className="text-lg font-bold">{collectedImageStats.catalogImages}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Images avec métadonnées', 'Images with metadata')}</p><p className="text-lg font-bold">{collectedImageStats.imagesWithMeta}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Taille moyenne (KB)', 'Average size (KB)')}</p><p className="text-lg font-bold">{collectedImageStats.averageSizeKb}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Résolution moyenne (px²)', 'Average resolution (px²)')}</p><p className="text-lg font-bold">{collectedImageStats.averageResolution}</p></div>
+                  <div className="rounded bg-white p-2"><p className="text-xs text-slate-500">{t('Listings suspects', 'Suspect listings')}</p><p className="text-lg font-bold text-red-600">{listingStatusCounts.suspect}</p></div>
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
                   <thead>
@@ -297,6 +396,17 @@ export default function AdminPage() {
           ) : (
             <p className="text-sm text-slate-500">{t('Aucune donnée IA pour le moment.', 'No AI health data yet.')}</p>
           )}
+
+          <AdminShopyiaLab
+            locale={locale}
+            country={country}
+            city={city}
+            title={t('Zone de chat test Shopyia (Admin)', 'Shopyia test chat zone (Admin)')}
+            subtitle={t(
+              'Zone ouverte pour discuter directement avec Shopyia et tester les prompts métier avant diffusion.',
+              'Open area to chat directly with Shopyia and test business prompts before rollout.'
+            )}
+          />
         </div>
       ) : null}
 

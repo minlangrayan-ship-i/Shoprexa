@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -53,9 +53,10 @@ export default function HomePage() {
       <section className="section py-16">
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
-            <p className="mb-4 inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">{t('Marketplace africaine premium', 'Premium African marketplace')}</p>
+            <p className="mb-4 inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">{t('Plateforme pensée pour l’Afrique', 'Platform built for Africa')}</p>
             <h1 className="text-4xl font-black leading-tight md:text-5xl">{t('Les meilleurs produits du quotidien, prêts à simplifier votre vie.', 'The best everyday products, built for African realities.')}</h1>
-            <p className="mt-5 text-slate-600">{t('Catalogue visuel optimisé pour', 'Visual-first catalog optimized for')} {city}, {country}. {t('Images nettes, vendeurs vérifiés, parcours rapide.', 'Sharp images, verified sellers, frictionless checkout flow.')}</p>
+            <p className="mt-5 text-slate-600">{t('Lancement au Cameroun. Livraison active à Yaoundé, Douala, Bafoussam et dans le Sud.', 'Launch in Cameroon. Active delivery in Yaounde, Douala, Bafoussam and South region.')}</p>
+            <p className="mt-2 text-slate-600">{t('Empowering African Commerce : nous construisons une marque panafricaine avec un déploiement opérationnel progressif.', 'Empowering African Commerce: we are building a pan-African brand with progressive operational rollout.')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white">{t('Voir le catalogue', 'Browse catalog')}</Link>
               <Link href="/auth/register" className="rounded-xl border px-5 py-3 font-semibold">{t('Créer un compte', 'Create account')}</Link>
@@ -67,9 +68,16 @@ export default function HomePage() {
             <ul className="mt-5 list-disc space-y-2 pl-5 text-sm marker:text-white">
               <li>{t('Produits adaptés aux réalités africaines', 'Products tailored to African realities')}</li>
               <li>{t('Vendeurs vérifiés et notes visibles', 'Verified vendors with visible ratings')}</li>
-              <li>{t('UX mobile-first orientee conversion', 'Mobile-first conversion-focused UX')}</li>
+              <li>{t('Disponible au Cameroun au lancement', 'Available in Cameroon at launch')}</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="section py-2">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <p className="font-semibold">🇨🇲 {t('Disponible au Cameroun', 'Available in Cameroon')}</p>
+          <p>{t('Lancement au Cameroun : Yaoundé, Douala, Bafoussam et zone Sud.', 'Cameroon launch: Yaounde, Douala, Bafoussam, and South zone.')}</p>
         </div>
       </section>
 

@@ -8,7 +8,6 @@ import { useSite } from '@/components/site-context';
 export default function DropshippersPage() {
   const { country, sessionUser, sellers, reviews, dropshipperCatalogProposals, proposeDropshipperCatalog, t } = useSite();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [zone, setZone] = useState<'all' | 'country'>('all');
   const [status, setStatus] = useState('');
 
   const canAccess =
@@ -19,7 +18,7 @@ export default function DropshippersPage() {
     () =>
       dropshippers
         .filter((entry) => {
-          if (zone === 'country' && entry.country !== country) return false;
+          if (entry.country !== country) return false;
           if (verifiedOnly && !entry.email.includes('@')) return false;
           return true;
         })
@@ -32,7 +31,7 @@ export default function DropshippersPage() {
           const scoreB = companyReviewsB.reduce((sum, review) => sum + review.rating, 0) / Math.max(1, companyReviewsB.length);
           return scoreB - scoreA;
         }),
-    [country, reviews, sellers, verifiedOnly, zone]
+    [country, reviews, sellers, verifiedOnly]
   );
 
   if (!canAccess) {
@@ -62,10 +61,9 @@ export default function DropshippersPage() {
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-        <select value={zone} onChange={(event) => setZone(event.target.value as 'all' | 'country')} className="rounded-lg border px-2 py-1">
-          <option value="all">{t('Tous pays', 'All countries')}</option>
-          <option value="country">{t('Mon pays', 'My country')}</option>
-        </select>
+        <span className="rounded-lg border bg-slate-50 px-2 py-1 text-slate-700">
+          🇨🇲 {t('Disponible au Cameroun', 'Available in Cameroon')}
+        </span>
         <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1">
           <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
           {t('Partenaires qualifiés', 'Qualified partners')}

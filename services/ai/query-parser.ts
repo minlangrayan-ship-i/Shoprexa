@@ -1,5 +1,6 @@
-import { categoryKeywords } from '@/db/mock-ai-data';
-import { africaCountries, marketplaceCategories } from '@/lib/mock-marketplace';
+﻿import { categoryKeywords } from '@/db/mock-ai-data';
+import { marketplaceCategories } from '@/lib/mock-marketplace';
+import { getLaunchCities, launchCountryName } from '@/lib/geo-config';
 import type { ParsedUserQuery, QueryIntent } from '@/types/marketplace-ai';
 
 const STOP_WORDS = new Set([
@@ -47,16 +48,18 @@ function parseCategory(text: string) {
 
 function parseLocation(text: string) {
   const normalized = text.toLowerCase();
+  const cities = getLaunchCities();
   let country: string | null = null;
   let city: string | null = null;
 
-  for (const entry of africaCountries) {
-    if (normalized.includes(entry.country.toLowerCase())) country = entry.country;
-    for (const cityName of entry.cities) {
-      if (normalized.includes(cityName.toLowerCase())) {
-        city = cityName;
-        country = entry.country;
-      }
+  if (normalized.includes(launchCountryName.toLowerCase())) {
+    country = launchCountryName;
+  }
+
+  for (const cityName of cities) {
+    if (normalized.includes(cityName.toLowerCase())) {
+      city = cityName;
+      country = launchCountryName;
     }
   }
 

@@ -12,6 +12,8 @@ export async function GET(request: Request) {
         id: string;
         name: string;
         email: string;
+        image?: string | null;
+        provider?: string;
         role: 'ADMIN' | 'CUSTOMER' | 'SELLER';
       } | null>;
     };
@@ -19,8 +21,35 @@ export async function GET(request: Request) {
       findFirst(args: { where: { userId: string } }): Promise<{ id: string } | null>;
     };
   };
-  const user = await db.user.findUnique({ where: { id: session.userId } });
-  if (!user) {
+  try {
+    const user = await db.user.findUnique({ where: { id: session.userId } });
+    if (!user) {
+      return NextResponse.json({
+        user: {
+          id: session.userId,
+          name: session.email.split('@')[0],
+          email: session.email,
+          role: session.role,
+          sellerId: session.sellerId ?? null
+        }
+      });
+    }
+
+    const seller = db.seller ? await db.seller.findFirst({ where: { userId: user.id } }) : null;
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image ?? null,
+        provider: user.provider ?? 'LOCAL',
+        role: user.role,
+        sellerId: seller?.id ?? null
+      }
+    });
+  } catch {
+    // Local/dev resilience: if DB is unreachable, keep app usable with signed session payload.
     return NextResponse.json({
       user: {
         id: session.userId,
@@ -31,16 +60,4 @@ export async function GET(request: Request) {
       }
     });
   }
-
-  const seller = db.seller ? await db.seller.findFirst({ where: { userId: user.id } }) : null;
-
-  return NextResponse.json({
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      sellerId: seller?.id ?? null
-    }
-  });
 }

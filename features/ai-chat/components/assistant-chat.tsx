@@ -111,7 +111,7 @@ export function AssistantChat({ locale, country, city, isGuest }: Props) {
     <section className="section py-10">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-bold">{locale === 'fr' ? 'Assistant client Min-shop' : 'Min-shop customer assistant'}</h1>
+          <h1 className="text-2xl font-bold">{locale === 'fr' ? 'Shopyia - Assistant client Min-shop' : 'Shopyia - Min-shop customer assistant'}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {locale === 'fr'
               ? 'Pose une question produit, livraison, paiement ou comparaison.'

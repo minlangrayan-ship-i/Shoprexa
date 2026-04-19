@@ -23,7 +23,10 @@ export const complementaryCategoryMap: Record<string, string[]> = {
   sante: ['fitness', 'cuisine'],
   education: ['organisation', 'energie'],
   agriculture: ['maison', 'energie'],
-  maison: ['organisation', 'securite']
+  maison: ['organisation', 'securite'],
+  'beaute-soins': ['sante', 'pret-a-porter'],
+  'accessoires-telephone': ['energie', 'mobilite'],
+  'pret-a-porter': ['beaute-soins', 'accessoires-telephone']
 };
 
 export const categoryKeywords: Record<string, string[]> = {
@@ -36,13 +39,20 @@ export const categoryKeywords: Record<string, string[]> = {
   sante: ['sante', 'hygiene', 'bien-etre', 'soin', 'pharmacie'],
   education: ['education', 'ecole', 'eleve', 'etudiant', 'apprentissage'],
   agriculture: ['agriculture', 'ferme', 'semence', 'irrigation', 'recolte'],
-  maison: ['maison', 'menage', 'entretien', 'domestique', 'foyer']
+  maison: ['maison', 'menage', 'entretien', 'domestique', 'foyer'],
+  'beaute-soins': ['beaute', 'soin', 'serum', 'creme', 'peau', 'capillaire', 'cosmetique'],
+  'accessoires-telephone': ['telephone', 'coque', 'chargeur', 'cable', 'ecouteurs', 'smartphone'],
+  'pret-a-porter': ['pret a porter', 'mode', 'chemise', 'robe', 'sac', 'vetement', 'boutique']
 };
 
 export const vagueWords = ['divers', 'best', 'incroyable', 'miracle', 'top top', 'qualite premium absolue'];
 
 export const cityDistanceBands: Array<{ from: string; to: string; km: number }> = [
   { from: 'Yaounde', to: 'Douala', km: 240 },
+  { from: 'Yaounde', to: 'Bafoussam', km: 295 },
+  { from: 'Douala', to: 'Bafoussam', km: 282 },
+  { from: 'Yaounde', to: 'Ebolowa', km: 150 },
+  { from: 'Douala', to: 'Kribi', km: 180 },
   { from: 'Abidjan', to: 'Yamoussoukro', km: 240 },
   { from: 'Dakar', to: 'Thies', km: 70 },
   { from: 'Lagos', to: 'Abuja', km: 760 },

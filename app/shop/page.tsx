@@ -1,26 +1,43 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { RecommendationStrip } from '@/features/recommendations/components/recommendation-strip';
 import { getRegionalDemandAdjustedRating, marketplaceCategories } from '@/lib/mock-marketplace';
 import { useSite } from '@/components/site-context';
+import { getCityDistricts } from '@/lib/geo-config';
 import type { RecommendationBlock } from '@/types/marketplace-ai';
 
 export default function ShopPage() {
-  const { locale, country, city, products, users, getFollowedSellerIds, t } = useSite();
+  const { locale, country, city, products, users, sellers, getFollowedSellerIds, t } = useSite();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [offerType, setOfferType] = useState<'all' | 'product' | 'service'>('all');
   const [sort, setSort] = useState<'popular' | 'price_asc' | 'price_desc' | 'rating'>('popular');
+  const [district, setDistrict] = useState('');
   const [recommendationBlocks, setRecommendationBlocks] = useState<RecommendationBlock[]>([]);
   const followedSellerIds = useMemo(() => getFollowedSellerIds(), [getFollowedSellerIds]);
+
+  const districts = useMemo(() => getCityDistricts(city), [city]);
+
+  useEffect(() => {
+    if (!districts.includes(district)) {
+      setDistrict(districts[0] ?? '');
+    }
+  }, [district, districts]);
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => product.sellerCountry === country && product.sellerCity === city);
 
     if (result.length === 0) {
       result = products.filter((product) => product.sellerCountry === country);
+    }
+
+    if (district) {
+      result = result.filter((product) => {
+        const seller = sellers.find((entry) => entry.id === product.sellerId);
+        return seller?.district ? seller.district === district : true;
+      });
     }
 
     if (query.trim()) {
@@ -36,10 +53,14 @@ export default function ShopPage() {
     if (category) result = result.filter((product) => product.categorySlug === category);
     if (offerType !== 'all') result = result.filter((product) => (product.kind ?? 'product') === offerType);
 
-    const withDemandRatings = result.map((product) => ({
-      ...product,
-      demandRating: getRegionalDemandAdjustedRating(product, users, country, city, 'city')
-    }));
+    const withDemandRatings = result.map((product) => {
+      const seller = sellers.find((entry) => entry.id === product.sellerId);
+      return {
+        ...product,
+        sellerDistrict: seller?.district ?? '',
+        demandRating: getRegionalDemandAdjustedRating(product, users, country, city, 'city')
+      };
+    });
 
     if (sort === 'price_asc') withDemandRatings.sort((a, b) => a.price - b.price);
     if (sort === 'price_desc') withDemandRatings.sort((a, b) => b.price - a.price);
@@ -61,15 +82,16 @@ export default function ShopPage() {
         id: product.sellerId,
         companyName: product.companyName,
         country: product.sellerCountry,
-        city: product.sellerCity
+        city: product.sellerCity,
+        district: product.sellerDistrict
       },
-        badges: product.badges,
-        averageRating: product.demandRating,
-        kind: product.kind,
-        serviceDuration: product.serviceDuration,
-        serviceAvailability: product.serviceAvailability
-      }));
-  }, [category, city, country, offerType, products, query, sort, users]);
+      badges: product.badges,
+      averageRating: product.demandRating,
+      kind: product.kind,
+      serviceDuration: product.serviceDuration,
+      serviceAvailability: product.serviceAvailability
+    }));
+  }, [category, city, country, district, offerType, products, query, sellers, sort, users]);
 
   useEffect(() => {
     const run = async () => {
@@ -106,7 +128,7 @@ export default function ShopPage() {
         </div>
       </div>
 
-      <div className="card mt-6 grid gap-3 p-4 md:grid-cols-5">
+      <div className="card mt-6 grid gap-3 p-4 md:grid-cols-6">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -134,12 +156,18 @@ export default function ShopPage() {
           <option value="service">{t('Services uniquement', 'Services only')}</option>
         </select>
 
+        <select value={district} onChange={(event) => setDistrict(event.target.value)} className="rounded-lg border px-3 py-2">
+          {districts.map((entry) => (
+            <option key={entry} value={entry}>{entry}</option>
+          ))}
+        </select>
+
         <div className="rounded-lg border border-dashed px-3 py-2 text-sm text-slate-600">{filteredProducts.length} {t('produits disponibles', 'products available')}</div>
       </div>
 
       {filteredProducts.length === 0 ? (
         <div className="card mt-8 p-6 text-sm text-slate-600">
-          {t('Aucun produit pour cette zone. Essaie une autre ville via la navbar.', 'No products for this location yet. Try another city in the navbar.')}
+          {t('Aucun produit pour cette zone. Essaie une autre ville dans la barre du haut.', 'No products for this location yet. Try another city in the top bar.')}
         </div>
       ) : (
         <>

@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { estimateSmartDelivery } from '@/services/delivery/delivery-estimator';
 import { recordAiMetric } from '@/services/ai/health-metrics';
+import { isLaunchCountry, isSupportedLaunchCity, launchCountryName } from '@/lib/geo-config';
 
 const ROUTE_KEY = '/api/delivery-estimate';
 
@@ -22,6 +23,16 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       recordAiMetric(ROUTE_KEY, { error: true });
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    if (!isLaunchCountry(parsed.data.sellerCountry) || !isLaunchCountry(parsed.data.clientCountry)) {
+      recordAiMetric(ROUTE_KEY, { error: true });
+      return NextResponse.json({ error: 'country_not_supported', message: `Lancement limité au ${launchCountryName}.` }, { status: 400 });
+    }
+
+    if (!isSupportedLaunchCity(parsed.data.sellerCity) || !isSupportedLaunchCity(parsed.data.clientCity)) {
+      recordAiMetric(ROUTE_KEY, { error: true });
+      return NextResponse.json({ error: 'city_not_supported' }, { status: 400 });
     }
 
     const { locale, ...payload } = parsed.data;

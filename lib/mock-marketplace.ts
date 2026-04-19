@@ -5,6 +5,7 @@ export type CountryOption = {
   country: string;
   cities: string[];
 };
+import { getLaunchCities, launchCountryName } from '@/lib/geo-config';
 
 export type MarketplaceSeller = {
   id: string;
@@ -16,6 +17,7 @@ export type MarketplaceSeller = {
   phone: string;
   country: string;
   city: string;
+  district?: string;
   verified: boolean;
   identityVerified: boolean;
   sellerType: SellerType;
@@ -28,6 +30,8 @@ export type MarketplaceSeller = {
     whatsapp?: string;
     instagram?: string;
     facebook?: string;
+    twitter?: string;
+    youtube?: string;
   };
   announcementImages?: string[];
   followerIds?: string[];
@@ -118,6 +122,7 @@ export type DemoUser = {
   role: AccountRole;
   country: string;
   city: string;
+  district?: string;
   phone: string;
   avatar?: string;
   sellerId?: string;
@@ -157,24 +162,11 @@ export const defaultAvatar =
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80&auto=format&fit=crop';
 
 export const africaCountries: CountryOption[] = [
-  { country: 'Cameroun', cities: ['Yaounde', 'Douala', 'Bafoussam'] },
-  { country: 'Cote d\'Ivoire', cities: ['Abidjan', 'Bouake', 'Yamoussoukro'] },
-  { country: 'Senegal', cities: ['Dakar', 'Thies', 'Saint-Louis'] },
-  { country: 'Congo', cities: ['Brazzaville', 'Pointe-Noire'] },
-  { country: 'Tchad', cities: ['N\'Djamena', 'Moundou'] },
-  { country: 'Nigeria', cities: ['Lagos', 'Abuja', 'Kano'] },
-  { country: 'Kenya', cities: ['Nairobi', 'Mombasa', 'Kisumu'] }
+  { country: launchCountryName, cities: getLaunchCities() }
 ];
 
 export const countryPhonePrefixes: Record<string, string> = {
-  'Cameroun': '+237',
-  'Cote d\'Ivoire': '+225',
-  'Senegal': '+221',
-  'Congo': '+242',
-  'Tchad': '+235',
-  'Nigeria': '+234',
-  'Kenya': '+254',
-  'France': '+33'
+  'Cameroun': '+237'
 };
 
 export const marketplaceCategories = [
@@ -187,7 +179,10 @@ export const marketplaceCategories = [
   { label: 'Sante', slug: 'sante' },
   { label: 'Education', slug: 'education' },
   { label: 'Agriculture', slug: 'agriculture' },
-  { label: 'Maison', slug: 'maison' }
+  { label: 'Maison', slug: 'maison' },
+  { label: 'BEAUTE & SOINS', slug: 'beaute-soins' },
+  { label: 'ACCESSOIRES TELEPHONE', slug: 'accessoires-telephone' },
+  { label: 'PRET A PORTER', slug: 'pret-a-porter' }
 ];
 
 const coreSellerProfiles: MarketplaceSeller[] = [
@@ -214,18 +209,18 @@ const coreSellerProfiles: MarketplaceSeller[] = [
   },
   {
     id: 'seller-2',
-    slug: 'secure-home-west',
-    name: 'Ibrahim Konate',
-    company: 'Secure Home West',
-    email: 'ibrahim@securehome.ci',
+    slug: 'douala-beaute-signature',
+    name: 'Stella Ngono',
+    company: 'Douala Beaute Signature',
+    email: 'stella@beautesignature.cm',
     password: 'SellerIbrahim123',
-    phone: '+225 0102030405',
-    country: 'Cote d\'Ivoire',
-    city: 'Abidjan',
+    phone: '+237 695331104',
+    country: 'Cameroun',
+    city: 'Douala',
     verified: true,
     identityVerified: true,
-    sellerType: 'company',
-    about: 'Equipements securite et organisation pour familles et commerces urbains.',
+    sellerType: 'min_shop',
+    about: 'Boutique beaute et soins premium avec produits authentiques, routine claire et service rapide.',
     activityDescription: '',
     openingHours: '08:00',
     closingHours: '19:00',
@@ -235,18 +230,18 @@ const coreSellerProfiles: MarketplaceSeller[] = [
   },
   {
     id: 'seller-3',
-    slug: 'urban-mobility-lab',
-    name: 'Linda Okafor',
-    company: 'Urban Mobility Lab',
-    email: 'linda@uml.ng',
+    slug: 'bafoussam-mobile-style-hub',
+    name: 'Arnaud Temfack',
+    company: 'Bafoussam Mobile & Style Hub',
+    email: 'arnaud@mobilestyle.cm',
     password: 'SellerLinda123',
-    phone: '+234 8030001111',
-    country: 'Nigeria',
-    city: 'Lagos',
+    phone: '+237 678442209',
+    country: 'Cameroun',
+    city: 'Bafoussam',
     verified: true,
-    identityVerified: false,
+    identityVerified: true,
     sellerType: 'dropshipper',
-    about: 'Mobilite urbaine et bien-etre pour etudiants, pros et livreurs.',
+    about: 'Specialiste accessoires telephone et pret a porter urbain avec livraison fiable et visuels premium.',
     activityDescription: '',
     openingHours: '09:00',
     closingHours: '18:30',
@@ -441,6 +436,21 @@ const imageSets = {
     'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=1400&q=85&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=1400&q=85&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?w=1400&q=85&auto=format&fit=crop'
+  ],
+  beauty: [
+    'https://images.unsplash.com/photo-1612817288484-6f916006741a?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=1400&q=85&auto=format&fit=crop'
+  ],
+  phoneAccessories: [
+    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1601593346740-925612772716?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1510552776732-01acc4b0b84e?w=1400&q=85&auto=format&fit=crop'
+  ],
+  fashion: [
+    'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1400&q=85&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1400&q=85&auto=format&fit=crop'
   ]
 };
 
@@ -863,6 +873,166 @@ export const marketplaceProducts: MarketplaceProduct[] = [
     targetCountries: ['Nigeria', 'Kenya', 'Cameroun']
   },
   {
+    id: 'prod-23',
+    slug: 'serum-vitamine-c-eclat',
+    name: 'Serum vitamine C eclat intense',
+    description: 'Serum concentre pour routine beaute quotidienne, aide a uniformiser le teint, a hydrater durablement et a donner un rendu plus lumineux sans sensation grasse.',
+    price: 12900,
+    oldPrice: 15900,
+    stock: 57,
+    images: imageSets.beauty,
+    category: 'Beaute & soins',
+    categorySlug: 'beaute-soins',
+    problemTag: 'Routine eclat et hydratation',
+    sellerId: 'seller-2',
+    companyName: 'Douala Beaute Signature',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Douala',
+    badges: ['popular'],
+    averageRating: 4.8,
+    viewCount: 544
+  },
+  {
+    id: 'prod-24',
+    slug: 'kit-soin-peau-sensitive',
+    name: 'Kit soin peau sensitive',
+    description: 'Pack nettoyant, creme et protection pour peaux sensibles, formule douce adaptee au climat local avec conseils de routine fournis par la boutique.',
+    price: 23900,
+    oldPrice: 27900,
+    stock: 36,
+    images: imageSets.beauty,
+    category: 'Beaute & soins',
+    categorySlug: 'beaute-soins',
+    problemTag: 'Soin visage quotidien',
+    sellerId: 'seller-2',
+    companyName: 'Douala Beaute Signature',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Douala',
+    badges: ['new'],
+    averageRating: 4.7,
+    viewCount: 412
+  },
+  {
+    id: 'prod-25',
+    slug: 'brume-capillaire-repair',
+    name: 'Brume capillaire repair',
+    description: 'Soin capillaire leger pour cheveux secs ou fragilises, facilite le coiffage, reduit la casse et garde une finition propre toute la journee.',
+    price: 9900,
+    oldPrice: null,
+    stock: 62,
+    images: imageSets.beauty,
+    category: 'Beaute & soins',
+    categorySlug: 'beaute-soins',
+    problemTag: 'Soin capillaire',
+    sellerId: 'seller-2',
+    companyName: 'Douala Beaute Signature',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Douala',
+    badges: ['popular'],
+    averageRating: 4.6,
+    viewCount: 387
+  },
+  {
+    id: 'prod-26',
+    slug: 'pack-coques-charge-rapide',
+    name: 'Pack coques + charge rapide',
+    description: 'Pack accessoires telephone avec coque antichoc, cable renforce et adaptateur rapide pour proteger les appareils et prolonger leur usage quotidien.',
+    price: 14900,
+    oldPrice: 18900,
+    stock: 49,
+    images: imageSets.phoneAccessories,
+    category: 'Accessoires telephone',
+    categorySlug: 'accessoires-telephone',
+    problemTag: 'Protection smartphone',
+    sellerId: 'seller-3',
+    companyName: 'Bafoussam Mobile & Style Hub',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Bafoussam',
+    badges: ['popular'],
+    averageRating: 4.8,
+    viewCount: 498
+  },
+  {
+    id: 'prod-27',
+    slug: 'ecouteurs-sans-fil-city',
+    name: 'Ecouteurs sans fil City Pro',
+    description: 'Ecouteurs bluetooth avec autonomie longue et micro clair, pensés pour les trajets urbains, les appels travail et le divertissement mobile.',
+    price: 21900,
+    oldPrice: 24900,
+    stock: 41,
+    images: imageSets.phoneAccessories,
+    category: 'Accessoires telephone',
+    categorySlug: 'accessoires-telephone',
+    problemTag: 'Audio mobile',
+    sellerId: 'seller-3',
+    companyName: 'Bafoussam Mobile & Style Hub',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Bafoussam',
+    badges: ['new'],
+    averageRating: 4.7,
+    viewCount: 429
+  },
+  {
+    id: 'prod-28',
+    slug: 'chemise-lin-pret-a-porter',
+    name: 'Chemise lin premium pret a porter',
+    description: 'Chemise coupe moderne et tissu respirant, adaptee au climat local pour usage bureau ou sortie avec finitions propres et taille bien structuree.',
+    price: 18500,
+    oldPrice: 22000,
+    stock: 33,
+    images: imageSets.fashion,
+    category: 'Pret a porter',
+    categorySlug: 'pret-a-porter',
+    problemTag: 'Mode urbaine',
+    sellerId: 'seller-3',
+    companyName: 'Bafoussam Mobile & Style Hub',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Bafoussam',
+    badges: ['popular'],
+    averageRating: 4.7,
+    viewCount: 466
+  },
+  {
+    id: 'prod-29',
+    slug: 'robe-urbaine-elegance',
+    name: 'Robe urbaine elegance',
+    description: 'Robe pret a porter confortable et polyvalente pour journee active, reunions ou sorties, avec coupe flatteuse et matiere facile a entretenir.',
+    price: 24900,
+    oldPrice: 29900,
+    stock: 22,
+    images: imageSets.fashion,
+    category: 'Pret a porter',
+    categorySlug: 'pret-a-porter',
+    problemTag: 'Mode feminine',
+    sellerId: 'seller-3',
+    companyName: 'Bafoussam Mobile & Style Hub',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Bafoussam',
+    badges: ['new'],
+    averageRating: 4.6,
+    viewCount: 351
+  },
+  {
+    id: 'prod-30',
+    slug: 'sac-main-premium-light',
+    name: 'Sac a main premium light',
+    description: 'Sac pret a porter avec compartiments fonctionnels, style propre et finition robuste pour accompagner les deplacements quotidiens en ville.',
+    price: 19900,
+    oldPrice: null,
+    stock: 27,
+    images: imageSets.fashion,
+    category: 'Pret a porter',
+    categorySlug: 'pret-a-porter',
+    problemTag: 'Accessoire mode',
+    sellerId: 'seller-3',
+    companyName: 'Bafoussam Mobile & Style Hub',
+    sellerCountry: 'Cameroun',
+    sellerCity: 'Bafoussam',
+    badges: ['popular'],
+    averageRating: 4.5,
+    viewCount: 322
+  },
+  {
     id: 'prod-15',
     slug: 'boite-rangement-modulaire',
     name: 'Boite rangement modulaire',
@@ -956,7 +1126,22 @@ export const seededReviews: SellerReview[] = [
   { id: 'rev-7', sellerId: 'seller-1', customerName: 'Aline Mvondo', rating: 5, comment: 'Tres satisfaite de la lampe solaire, exactement comme sur la photo.', createdAt: '2026-04-03' },
   { id: 'rev-8', sellerId: 'seller-2', customerName: 'Cheikh Ndiaye', rating: 4, comment: 'Bon suivi et installation rapide du service securite.', createdAt: '2026-04-04' },
   { id: 'rev-9', sellerId: 'seller-3', customerName: 'Merveille Ewane', rating: 5, comment: 'Le vendeur m a bien conseille avant achat.', createdAt: '2026-04-05' },
-  { id: 'rev-10', sellerId: 'seller-1', customerName: 'Samuel Okoro', rating: 4, comment: 'Experience fluide, delai de livraison respecte.', createdAt: '2026-04-06' }
+  { id: 'rev-10', sellerId: 'seller-1', customerName: 'Samuel Okoro', rating: 4, comment: 'Experience fluide, delai de livraison respecte.', createdAt: '2026-04-06' },
+  { id: 'rev-11', sellerId: 'seller-2', customerName: 'Clarisse', rating: 5, comment: 'Produits beaute authentiques et conseils utiles.', createdAt: '2026-04-07' },
+  { id: 'rev-12', sellerId: 'seller-2', customerName: 'Mado', rating: 4, comment: 'Routine soin tres claire, livraison bien respectee.', createdAt: '2026-04-08' },
+  { id: 'rev-13', sellerId: 'seller-2', customerName: 'Elodie', rating: 5, comment: 'Le kit peau sensitive est top pour ma peau.', createdAt: '2026-04-09' },
+  { id: 'rev-14', sellerId: 'seller-2', customerName: 'Daphne', rating: 4, comment: 'Qualite premium et belle presentation boutique.', createdAt: '2026-04-10' },
+  { id: 'rev-15', sellerId: 'seller-2', customerName: 'Aurelie', rating: 5, comment: 'Tres bonne experience globale et support reactif.', createdAt: '2026-04-11' },
+  { id: 'rev-16', sellerId: 'seller-2', customerName: 'Mina', rating: 4, comment: 'Produits conformes, service fiable.', createdAt: '2026-04-12' },
+  { id: 'rev-17', sellerId: 'seller-2', customerName: 'Flora', rating: 5, comment: 'Boutique pro, rassurante et bien structuree.', createdAt: '2026-04-13' },
+  { id: 'rev-18', sellerId: 'seller-3', customerName: 'Nora', rating: 5, comment: 'Accessoires telephone solides et tres utiles.', createdAt: '2026-04-07' },
+  { id: 'rev-19', sellerId: 'seller-3', customerName: 'Cedric', rating: 4, comment: 'Ecouteurs de bonne qualite et delai respecte.', createdAt: '2026-04-08' },
+  { id: 'rev-20', sellerId: 'seller-3', customerName: 'Brigitte', rating: 5, comment: 'Pret a porter conforme aux photos, tres satisfait.', createdAt: '2026-04-09' },
+  { id: 'rev-21', sellerId: 'seller-3', customerName: 'Herve', rating: 4, comment: 'Bon rapport qualite prix sur la gamme mode.', createdAt: '2026-04-10' },
+  { id: 'rev-22', sellerId: 'seller-3', customerName: 'Myriam', rating: 5, comment: 'Service client excellent et catalogue bien pense.', createdAt: '2026-04-11' },
+  { id: 'rev-23', sellerId: 'seller-3', customerName: 'Tina', rating: 4, comment: 'Produits arrives en bon etat, bonne communication.', createdAt: '2026-04-12' },
+  { id: 'rev-24', sellerId: 'seller-3', customerName: 'Lionel', rating: 5, comment: 'Vendeur tres pro, boutique moderne.', createdAt: '2026-04-13' },
+  { id: 'rev-25', sellerId: 'seller-3', customerName: 'Maeva', rating: 4, comment: 'Bon suivi de commande et qualite au rendez vous.', createdAt: '2026-04-14' }
 ];
 
 export const seededSellerOrders: SellerOrder[] = [
@@ -978,13 +1163,28 @@ export const seededSellerOrders: SellerOrder[] = [
   { id: 'ord-16', sellerId: 'seller-2', productId: 'prod-8', customerName: 'Awa', quantity: 2, total: 25600, status: 'delivered', createdAt: '2026-04-04' },
   { id: 'ord-17', sellerId: 'seller-2', productId: 'prod-20', customerName: 'Nafi', quantity: 1, total: 21500, status: 'shipped', createdAt: '2026-04-05' },
   { id: 'ord-18', sellerId: 'seller-3', productId: 'prod-9', customerName: 'Ife', quantity: 1, total: 689000, status: 'delivered', createdAt: '2026-04-04' },
-  { id: 'ord-19', sellerId: 'seller-3', productId: 'prod-22', customerName: 'Amina', quantity: 2, total: 69800, status: 'paid', createdAt: '2026-04-07' }
+  { id: 'ord-19', sellerId: 'seller-3', productId: 'prod-22', customerName: 'Amina', quantity: 2, total: 69800, status: 'paid', createdAt: '2026-04-07' },
+  { id: 'ord-20', sellerId: 'seller-2', productId: 'prod-23', customerName: 'Yvette', quantity: 2, total: 25800, status: 'delivered', createdAt: '2026-04-10' },
+  { id: 'ord-21', sellerId: 'seller-2', productId: 'prod-24', customerName: 'Rosine', quantity: 1, total: 23900, status: 'delivered', createdAt: '2026-04-10' },
+  { id: 'ord-22', sellerId: 'seller-2', productId: 'prod-25', customerName: 'Carla', quantity: 3, total: 29700, status: 'shipped', createdAt: '2026-04-11' },
+  { id: 'ord-23', sellerId: 'seller-2', productId: 'prod-23', customerName: 'Sabrina', quantity: 1, total: 12900, status: 'delivered', createdAt: '2026-04-11' },
+  { id: 'ord-24', sellerId: 'seller-2', productId: 'prod-24', customerName: 'Joelle', quantity: 1, total: 23900, status: 'delivered', createdAt: '2026-04-12' },
+  { id: 'ord-25', sellerId: 'seller-2', productId: 'prod-25', customerName: 'Ariane', quantity: 2, total: 19800, status: 'delivered', createdAt: '2026-04-12' },
+  { id: 'ord-26', sellerId: 'seller-2', productId: 'prod-23', customerName: 'Viviane', quantity: 1, total: 12900, status: 'shipped', createdAt: '2026-04-13' },
+  { id: 'ord-27', sellerId: 'seller-3', productId: 'prod-26', customerName: 'Chris', quantity: 2, total: 29800, status: 'delivered', createdAt: '2026-04-10' },
+  { id: 'ord-28', sellerId: 'seller-3', productId: 'prod-27', customerName: 'Lea', quantity: 1, total: 21900, status: 'delivered', createdAt: '2026-04-10' },
+  { id: 'ord-29', sellerId: 'seller-3', productId: 'prod-28', customerName: 'Noella', quantity: 1, total: 18500, status: 'shipped', createdAt: '2026-04-11' },
+  { id: 'ord-30', sellerId: 'seller-3', productId: 'prod-29', customerName: 'Prisca', quantity: 1, total: 24900, status: 'delivered', createdAt: '2026-04-11' },
+  { id: 'ord-31', sellerId: 'seller-3', productId: 'prod-30', customerName: 'Malo', quantity: 1, total: 19900, status: 'delivered', createdAt: '2026-04-12' },
+  { id: 'ord-32', sellerId: 'seller-3', productId: 'prod-26', customerName: 'Guy', quantity: 1, total: 14900, status: 'delivered', createdAt: '2026-04-12' },
+  { id: 'ord-33', sellerId: 'seller-3', productId: 'prod-27', customerName: 'Fabiola', quantity: 2, total: 43800, status: 'shipped', createdAt: '2026-04-13' },
+  { id: 'ord-34', sellerId: 'seller-3', productId: 'prod-28', customerName: 'Nelly', quantity: 1, total: 18500, status: 'delivered', createdAt: '2026-04-13' }
 ];
 
 export const seededSellerViews: Record<string, number[]> = {
   'seller-1': [120, 140, 170, 190, 210, 260, 290],
-  'seller-2': [110, 130, 150, 180, 200, 230, 270],
-  'seller-3': [150, 170, 210, 250, 300, 340, 390]
+  'seller-2': [180, 210, 250, 290, 330, 380, 420],
+  'seller-3': [190, 220, 260, 310, 360, 410, 470]
 };
 
 export const seededRecruitmentOffers: RecruitmentOffer[] = [

@@ -2,7 +2,6 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  africaCountries,
   countryPhonePrefixes,
   defaultAvatar,
   demoUsers,
@@ -27,13 +26,21 @@ import {
   type SellerOrder,
   type SellerReview
 } from '@/lib/mock-marketplace';
+import {
+  getCityDistricts,
+  getLaunchCities,
+  isLaunchCountry,
+  isSupportedLaunchCity,
+  launchCountryName,
+  normalizeToLaunchCountry
+} from '@/lib/geo-config';
 import { validateUploadedImages } from '@/lib/image-quality';
 import type { CartItem } from '@/lib/types';
 import type { VerificationImageInput } from '@/types/marketplace-ai';
 
 type Locale = 'fr' | 'en';
 
-type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'phone' | 'avatar' | 'sellerId' | 'sellerType' | 'createdAt' | 'preferences'>;
+type SessionUser = Pick<DemoUser, 'id' | 'name' | 'email' | 'role' | 'country' | 'city' | 'district' | 'phone' | 'avatar' | 'sellerId' | 'sellerType' | 'createdAt' | 'preferences'>;
 
 type RegisterPayload = {
   name: string;
@@ -44,6 +51,7 @@ type RegisterPayload = {
   sellerType?: SellerType;
   country: string;
   city: string;
+  district?: string;
   preferences?: string[];
 };
 
@@ -52,6 +60,7 @@ type ProfileUpdatePayload = {
   phone: string;
   country: string;
   city: string;
+  district?: string;
   avatar?: string;
   company?: string;
   about?: string;
@@ -62,6 +71,8 @@ type ProfileUpdatePayload = {
   whatsapp?: string;
   instagram?: string;
   facebook?: string;
+  twitter?: string;
+  youtube?: string;
   announcementImages?: string[];
 };
 
@@ -206,21 +217,74 @@ function normalizeSellersSnapshot(sellers: MarketplaceSeller[]) {
   return Array.from(map.values());
 }
 
+function sanitizeCity(city: string) {
+  return isSupportedLaunchCity(city) ? city : getLaunchCities()[0];
+}
+
+function sanitizeDistrict(city: string, district?: string) {
+  const districts = getCityDistricts(city);
+  if (district && districts.includes(district)) return district;
+  return districts[0] ?? '';
+}
+
+function enforceLaunchUsers(users: DemoUser[]) {
+  return users
+    .filter((user) => isLaunchCountry(user.country))
+    .map((user) => {
+      const nextCity = sanitizeCity(user.city);
+      return {
+        ...user,
+        country: normalizeToLaunchCountry(),
+        city: nextCity,
+        district: sanitizeDistrict(nextCity, user.district)
+      };
+    });
+}
+
+function enforceLaunchSellers(sellers: MarketplaceSeller[]) {
+  return sellers
+    .filter((seller) => isLaunchCountry(seller.country))
+    .map((seller) => {
+      const nextCity = sanitizeCity(seller.city);
+      return {
+        ...seller,
+        country: normalizeToLaunchCountry(),
+        city: nextCity,
+        district: sanitizeDistrict(nextCity, seller.district)
+      };
+    });
+}
+
+function enforceLaunchProducts(products: MarketplaceProduct[]) {
+  return products
+    .filter((product) => isLaunchCountry(product.sellerCountry) && isSupportedLaunchCity(product.sellerCity))
+    .map((product) => ({
+      ...product,
+      sellerCountry: normalizeToLaunchCountry(),
+      sellerCity: sanitizeCity(product.sellerCity),
+      targetCountries: [normalizeToLaunchCountry()]
+    }));
+}
+
+function enforceLaunchTestimonials(items: ClientTestimonial[]) {
+  return items.filter((entry) => isLaunchCountry(entry.country) && isSupportedLaunchCity(entry.city));
+}
+
 const SiteContext = createContext<SiteContextValue | null>(null);
 
 export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>('fr');
   const [isHydrated, setIsHydrated] = useState(false);
-  const [country, setCountryState] = useState<string>(africaCountries[0].country);
-  const [city, setCityState] = useState<string>(africaCountries[0].cities[0]);
+  const [country, setCountryState] = useState<string>(launchCountryName);
+  const [city, setCityState] = useState<string>(getLaunchCities()[0]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [users, setUsers] = useState<DemoUser[]>(normalizeSingleAdmin(demoUsers));
-  const [sellers, setSellers] = useState<MarketplaceSeller[]>(normalizeSellersSnapshot(sellerProfiles));
-  const [products, setProducts] = useState<MarketplaceProduct[]>(marketplaceProducts);
+  const [users, setUsers] = useState<DemoUser[]>(enforceLaunchUsers(normalizeSingleAdmin(demoUsers)));
+  const [sellers, setSellers] = useState<MarketplaceSeller[]>(enforceLaunchSellers(normalizeSellersSnapshot(sellerProfiles)));
+  const [products, setProducts] = useState<MarketplaceProduct[]>(enforceLaunchProducts(marketplaceProducts));
   const [orders, setOrders] = useState<SellerOrder[]>(seededSellerOrders);
   const [reviews, setReviews] = useState<SellerReview[]>(seededReviews);
   const [complaints] = useState<SellerComplaint[]>(seededSellerComplaints);
-  const [testimonials, setTestimonials] = useState<ClientTestimonial[]>(seededTestimonials);
+  const [testimonials, setTestimonials] = useState<ClientTestimonial[]>(enforceLaunchTestimonials(seededTestimonials));
   const [recruitmentOffers, setRecruitmentOffers] = useState<RecruitmentOffer[]>(seededRecruitmentOffers);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [dropshipperCatalogProposals, setDropshipperCatalogProposals] = useState<DropshipperCatalogProposal[]>([]);
@@ -266,15 +330,22 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       };
 
       if (parsed.locale === 'fr' || parsed.locale === 'en') setLocale(parsed.locale);
-      if (parsed.country) setCountryState(parsed.country);
-      if (parsed.city) setCityState(parsed.city);
-      if (parsed.sessionUser) setSessionUser(parsed.sessionUser);
-      if (parsed.users?.length) setUsers(normalizeSingleAdmin(parsed.users));
-      if (parsed.sellers?.length) setSellers(normalizeSellersSnapshot(parsed.sellers));
-      if (parsed.products?.length) setProducts(applyPersistedProductViews(parsed.products));
+      setCountryState(launchCountryName);
+      if (parsed.city && isSupportedLaunchCity(parsed.city)) setCityState(parsed.city);
+      if (parsed.sessionUser) {
+        setSessionUser({
+          ...parsed.sessionUser,
+          country: normalizeToLaunchCountry(),
+          city: sanitizeCity(parsed.sessionUser.city),
+          district: sanitizeDistrict(sanitizeCity(parsed.sessionUser.city), parsed.sessionUser.district)
+        });
+      }
+      if (parsed.users?.length) setUsers(enforceLaunchUsers(normalizeSingleAdmin(parsed.users)));
+      if (parsed.sellers?.length) setSellers(enforceLaunchSellers(normalizeSellersSnapshot(parsed.sellers)));
+      if (parsed.products?.length) setProducts(applyPersistedProductViews(enforceLaunchProducts(parsed.products)));
       if (parsed.orders?.length) setOrders(parsed.orders);
       if (parsed.reviews?.length) setReviews(parsed.reviews);
-      if (parsed.testimonials?.length) setTestimonials(parsed.testimonials);
+      if (parsed.testimonials?.length) setTestimonials(enforceLaunchTestimonials(parsed.testimonials));
       if (parsed.recruitmentOffers?.length) {
         setRecruitmentOffers(
           parsed.recruitmentOffers.map((offer) => ({ ...offer, commissionRate: offer.commissionRate ?? 10 }))
@@ -346,8 +417,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         if (matchingUser) {
           const nextSession = mapSession(matchingUser);
           setSessionUser((current) => (current?.id === nextSession.id ? current : nextSession));
-          setCountryState(matchingUser.country);
-          setCityState(matchingUser.city);
+          if (!sessionUser || sessionUser.id !== nextSession.id) {
+            setCountryState(launchCountryName);
+            setCityState(sanitizeCity(matchingUser.city));
+          }
           return;
         }
 
@@ -422,7 +495,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     siteVisits
   ]);
 
-  const availableCities = useMemo(() => africaCountries.find((entry) => entry.country === country)?.cities ?? [], [country]);
+  const availableCities = useMemo(() => getLaunchCities(), []);
 
   useEffect(() => {
     if (!availableCities.includes(city) && availableCities.length > 0) {
@@ -449,10 +522,16 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setCountry = (nextCountry: string) => {
-    setCountryState(nextCountry);
-    const cities = africaCountries.find((entry) => entry.country === nextCountry)?.cities ?? [];
+  const setCountry = (_ignoredCountry: string) => {
+    // Launch guard: Min-shop is currently available only in Cameroon.
+    void _ignoredCountry;
+    setCountryState(launchCountryName);
+    const cities = getLaunchCities();
     if (cities.length > 0) setCityState(cities[0]);
+  };
+
+  const setCity = (nextCity: string) => {
+    setCityState(sanitizeCity(nextCity));
   };
 
   const mapSession = (user: DemoUser): SessionUser => ({
@@ -460,8 +539,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     name: user.name,
     email: user.email,
     role: user.role,
-    country: user.country,
-    city: user.city,
+    country: normalizeToLaunchCountry(),
+    city: sanitizeCity(user.city),
+    district: sanitizeDistrict(sanitizeCity(user.city), user.district),
     phone: user.phone,
     avatar: user.avatar ?? defaultAvatar,
     sellerId: user.sellerId,
@@ -476,8 +556,8 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
     const session = mapSession(user);
     setSessionUser(session);
-    setCountryState(user.country);
-    setCityState(user.city);
+    setCountryState(launchCountryName);
+    setCityState(sanitizeCity(user.city));
 
     return { ok: true, message: locale === 'fr' ? `Bienvenue ${user.name}` : `Welcome ${user.name}`, user: session };
   };
@@ -487,7 +567,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (!payload.email.includes('@')) return { ok: false, message: t('Email invalide.', 'Invalid email.') };
     if (payload.password.length < 8) return { ok: false, message: t('Mot de passe trop court (8+).', 'Password too short (8+).') };
     if (!payload.phone.trim()) return { ok: false, message: t('Téléphone requis.', 'Phone is required.') };
-    const expectedPrefix = countryPhonePrefixes[payload.country] ?? '+';
+    if (payload.country !== launchCountryName) {
+      return { ok: false, message: t('Le lancement est disponible uniquement au Cameroun.', 'Launch is currently available only in Cameroon.') };
+    }
+
+    const expectedPrefix = countryPhonePrefixes[launchCountryName] ?? '+237';
     if (!payload.phone.startsWith(expectedPrefix)) {
       return {
         ok: false,
@@ -508,8 +592,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       email: payload.email,
       password: payload.password,
       role: payload.role,
-      country: payload.country,
-      city: payload.city,
+      country: normalizeToLaunchCountry(),
+      city: sanitizeCity(payload.city),
+      district: sanitizeDistrict(sanitizeCity(payload.city), payload.district),
       phone: payload.phone,
       avatar: defaultAvatar,
       sellerId,
@@ -536,8 +621,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           email: payload.email,
           password: payload.password,
           phone: payload.phone,
-          country: payload.country,
-          city: payload.city,
+          country: normalizeToLaunchCountry(),
+          city: sanitizeCity(payload.city),
+          district: sanitizeDistrict(sanitizeCity(payload.city), payload.district),
           verified: false,
           identityVerified: false,
           sellerType: nextSellerType,
@@ -580,8 +666,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
               ...user,
               name: payload.name,
               phone: payload.phone,
-              country: payload.country,
-              city: payload.city,
+              country: normalizeToLaunchCountry(),
+              city: sanitizeCity(payload.city),
+              district: sanitizeDistrict(sanitizeCity(payload.city), payload.district),
               avatar: payload.avatar ?? user.avatar
             }
           : user
@@ -596,8 +683,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
                 ...seller,
                 name: payload.name,
                 phone: payload.phone,
-                country: payload.country,
-                city: payload.city,
+                country: normalizeToLaunchCountry(),
+                city: sanitizeCity(payload.city),
+                district: sanitizeDistrict(sanitizeCity(payload.city), payload.district),
                 company: payload.company ?? seller.company,
                 about: payload.about ?? seller.about,
                 activityDescription: payload.activityDescription ?? seller.activityDescription,
@@ -607,7 +695,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
                   linkedin: payload.linkedin ?? seller.socialLinks?.linkedin,
                   whatsapp: payload.whatsapp ?? seller.socialLinks?.whatsapp,
                   instagram: payload.instagram ?? seller.socialLinks?.instagram,
-                  facebook: payload.facebook ?? seller.socialLinks?.facebook
+                  facebook: payload.facebook ?? seller.socialLinks?.facebook,
+                  twitter: payload.twitter ?? seller.socialLinks?.twitter,
+                  youtube: payload.youtube ?? seller.socialLinks?.youtube
                 },
                 announcementImages:
                   payload.announcementImages && payload.announcementImages.length > 0
@@ -626,8 +716,9 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
             ...current,
             name: payload.name,
             phone: payload.phone,
-            country: payload.country,
-            city: payload.city,
+            country: normalizeToLaunchCountry(),
+            city: sanitizeCity(payload.city),
+            district: sanitizeDistrict(sanitizeCity(payload.city), payload.district),
             avatar: payload.avatar ?? current.avatar
           }
         : current
@@ -1169,7 +1260,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         city,
         availableCities,
         setCountry,
-        setCity: setCityState,
+        setCity,
         sessionUser,
         users,
         sellers,

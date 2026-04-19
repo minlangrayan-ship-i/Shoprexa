@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +8,7 @@ import { getProductImageFitClass } from '@/lib/image-quality';
 import { formatPrice } from '@/lib/utils';
 import type { CartItem } from '@/lib/types';
 import { useSite } from '@/components/site-context';
+import { getLogisticsZone } from '@/lib/geo-config';
 
 type Product = {
   id: string;
@@ -24,6 +25,7 @@ type Product = {
     companyName: string;
     country: string;
     city: string;
+    district?: string;
   };
   badges?: Array<'new' | 'popular' | 'low_stock'>;
   averageRating?: number;
@@ -61,6 +63,8 @@ export function ProductCard({ product }: { product: Product }) {
     localStorage.setItem('min-shop-cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cart:update'));
   };
+
+  const zone = product.seller ? getLogisticsZone(product.seller.city) : null;
 
   return (
     <>
@@ -129,6 +133,8 @@ export function ProductCard({ product }: { product: Product }) {
               </p>
             ) : null}
             {product.seller ? <p>{product.seller.city}, {product.seller.country}</p> : null}
+            {product.seller?.city ? <p className="font-semibold text-emerald-700">{t('Disponible à', 'Available in')} {product.seller.city}</p> : null}
+            {zone ? <p>{t('Zone desservie', 'Served zone')}: {zone}</p> : null}
             {product.kind === 'service' && product.serviceDuration ? <p>{t('Durée', 'Duration')}: {product.serviceDuration}</p> : null}
             {product.kind === 'service' && product.serviceAvailability ? <p>{t('Disponibilité', 'Availability')}: {product.serviceAvailability}</p> : null}
           </div>

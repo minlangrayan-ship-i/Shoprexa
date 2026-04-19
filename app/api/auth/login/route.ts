@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         id: string;
         name: string;
         email: string;
-        passwordHash: string;
+        passwordHash: string | null;
         role: 'ADMIN' | 'CUSTOMER' | 'SELLER';
       } | null>;
     };
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
 
   const user = await db.user.findUnique({ where: { email: body.data.email } });
   if (!user) return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+  if (!user.passwordHash) return NextResponse.json({ error: 'use_google_login' }, { status: 401 });
 
   const valid = await bcrypt.compare(body.data.password, user.passwordHash);
   if (!valid) return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });

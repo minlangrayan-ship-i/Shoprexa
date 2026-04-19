@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export default function SellersPage() {
   const [sellerType, setSellerType] = useState<'all' | 'min_shop' | 'dropshipper' | 'company'>('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [niche, setNiche] = useState('');
-  const [zone, setZone] = useState<'city' | 'country' | 'all'>('country');
+  const [zone, setZone] = useState<'city' | 'country'>('country');
   const dashboardRef = useRef<HTMLElement | null>(null);
 
   const resetFilters = () => {
@@ -43,9 +43,7 @@ export default function SellersPage() {
   const rankedSellers = useMemo(() => {
     const base = zone === 'city'
       ? rankSellersByRating(reviews, country, city, sellers)
-      : zone === 'country'
-        ? rankSellersByRating(reviews, country, undefined, sellers)
-        : rankSellersByRating(reviews, undefined, undefined, sellers);
+      : rankSellersByRating(reviews, country, undefined, sellers);
 
     return base.filter((seller) => {
       if (sellerType !== 'all' && seller.sellerType !== sellerType) return false;
@@ -107,10 +105,9 @@ export default function SellersPage() {
           <p className="text-slate-600">{t('Classement local pour', 'Local ranking for')} {city}, {country}</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
-          <select value={zone} onChange={(event) => setZone(event.target.value as 'city' | 'country' | 'all')} className="rounded-lg border px-2 py-1 text-xs">
+          <select value={zone} onChange={(event) => setZone(event.target.value as 'city' | 'country')} className="rounded-lg border px-2 py-1 text-xs">
             <option value="city">{t('Ma ville', 'My city')}</option>
             <option value="country">{t('Mon pays', 'My country')}</option>
-            <option value="all">{t('Tous pays', 'All countries')}</option>
           </select>
           <select value={sellerType} onChange={(event) => setSellerType(event.target.value as 'all' | 'min_shop' | 'dropshipper' | 'company')} className="rounded-lg border px-2 py-1 text-xs">
             <option value="all">{t('Tous types', 'All types')}</option>

@@ -8,5 +8,16 @@ export async function POST() {
     path: '/',
     maxAge: 0
   });
+  response.cookies.set('next-auth.session-token', '', {
+    httpOnly: true,
+    path: '/',
+    maxAge: 0
+  });
+  response.cookies.set('__Secure-next-auth.session-token', '', {
+    httpOnly: true,
+    path: '/',
+    maxAge: 0,
+    secure: true
+  });
   return response;
 }

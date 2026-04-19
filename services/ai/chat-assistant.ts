@@ -3,10 +3,23 @@ import { formatPrice } from '@/lib/utils';
 import { runAiAdapter } from '@/services/ai/llm-adapter';
 import { toProductLite } from '@/services/marketplace-data';
 import { mapSearchIntent, searchProductsViaPythonAi } from '@/services/ai/python-ai-service';
+import { buildKnowledgeAnswer } from '@/services/ai/shopyia-knowledge';
 import type { AssistantIntent, ChatAssistantInput, ChatAssistantOutput, ProductLite } from '@/types/marketplace-ai';
 
 function detectIntent(message: string): AssistantIntent {
   const text = message.toLowerCase();
+  if (
+    text.includes('dropshipping') ||
+    text.includes('comportement client') ||
+    text.includes('conversion') ||
+    text.includes('recommandation') ||
+    text.includes('arnaque') ||
+    text.includes('securite') ||
+    text.includes('ecommerce') ||
+    text.includes('vente en ligne')
+  ) {
+    return 'general_help';
+  }
   if (text.includes('difference') || text.includes('comparer') || text.includes('compare')) return 'product_compare';
   if (text.includes('livraison') || text.includes('delai') || text.includes('arriver')) return 'faq_delivery';
   if (text.includes('paiement') || text.includes('payer') || text.includes('carte') || text.includes('mobile money')) return 'faq_payment';
@@ -68,6 +81,7 @@ function searchProducts(params: { message: string; country: string; city: string
 export async function buildChatAssistantReply(input: ChatAssistantInput): Promise<ChatAssistantOutput> {
   try {
     const intent = detectIntent(input.message);
+    const knowledge = buildKnowledgeAnswer(input.locale, input.message);
     const localSuggestions = searchProducts({
       message: input.message,
       country: input.country,
@@ -92,8 +106,8 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
         intent,
         answer:
           input.locale === 'fr'
-            ? `${faqKnowledge.delivery[0]} ${faqKnowledge.delivery[1]}`
-            : 'Delivery timeline depends on city, stock, and transport. Same city is fastest; cross-country is longer.',
+            ? `${faqKnowledge.delivery[0]} ${faqKnowledge.delivery[1]}${knowledge ? `\n\n${knowledge.text}` : ''}`
+            : `Delivery timeline depends on city, stock, and transport. Same city is fastest; cross-country is longer.${knowledge ? `\n\n${knowledge.text}` : ''}`,
         suggestions,
         fallbackUsed: false
       };
@@ -104,8 +118,8 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
         intent,
         answer:
           input.locale === 'fr'
-            ? `${faqKnowledge.payment[0]} ${faqKnowledge.payment[1]}`
-            : 'Min-shop supports local methods and cards depending on country. Payment confirmation happens before shipping.',
+            ? `${faqKnowledge.payment[0]} ${faqKnowledge.payment[1]}${knowledge ? `\n\n${knowledge.text}` : ''}`
+            : `Min-shop supports local methods and cards depending on country. Payment confirmation happens before shipping.${knowledge ? `\n\n${knowledge.text}` : ''}`,
         suggestions,
         fallbackUsed: false
       };
@@ -116,8 +130,8 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
         intent,
         answer:
           input.locale === 'fr'
-            ? `${faqKnowledge.returns[0]} ${faqKnowledge.returns[1]}`
-            : 'Returns depend on seller policy and product type. Damaged or non-compliant items can be reported quickly.',
+            ? `${faqKnowledge.returns[0]} ${faqKnowledge.returns[1]}${knowledge ? `\n\n${knowledge.text}` : ''}`
+            : `Returns depend on seller policy and product type. Damaged or non-compliant items can be reported quickly.${knowledge ? `\n\n${knowledge.text}` : ''}`,
         suggestions,
         fallbackUsed: false
       };
@@ -164,7 +178,16 @@ export async function buildChatAssistantReply(input: ChatAssistantInput): Promis
     if (pythonResult?.suggestions.length) {
       return {
         intent: mapSearchIntent(pythonResult.intent),
-        answer: pythonResult.answer,
+        answer: `${pythonResult.answer}${knowledge ? `\n\n${knowledge.text}` : ''}`,
+        suggestions,
+        fallbackUsed: false
+      };
+    }
+
+    if (knowledge) {
+      return {
+        intent: 'general_help',
+        answer: knowledge.text,
         suggestions,
         fallbackUsed: false
       };

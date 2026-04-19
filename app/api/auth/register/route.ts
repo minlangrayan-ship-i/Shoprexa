@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       name: body.data.name,
       email: body.data.email,
       passwordHash,
+      provider: 'LOCAL',
       ...(body.data.phone ? { phone: body.data.phone } : {}),
       role: body.data.role
     } as Record<string, unknown>

@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSite } from '@/components/site-context';
+import { GoogleAuthButton } from '@/components/auth/google-auth-button';
 
 function toServerRole(role: 'client' | 'seller' | 'admin') {
   if (role === 'admin') return 'ADMIN';
@@ -10,7 +11,7 @@ function toServerRole(role: 'client' | 'seller' | 'admin') {
   return 'CUSTOMER';
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, t } = useSite();
@@ -47,7 +48,7 @@ export default function LoginPage() {
         })
       });
     } catch {
-      // The UI stays usable even if the development cookie sync fails.
+      // Keep UX usable if cookie sync fails in development.
     }
 
     const next = searchParams.get('next');
@@ -63,11 +64,14 @@ export default function LoginPage() {
     if (result.user.role === 'admin') router.push('/admin');
   };
 
+  const next = searchParams.get('next');
+  const callbackUrl = `/auth/google-complete${next ? `?next=${encodeURIComponent(next)}` : ''}`;
+
   return (
     <section className="section py-14">
       <div className="mx-auto max-w-md rounded-2xl border bg-white p-7 shadow-sm">
         <h1 className="text-3xl font-bold">{t('Connexion', 'Login')}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t('Connecte-toi pour accéder à ton espace.', 'Sign in to access your workspace.')}</p>
+        <p className="mt-2 text-sm text-slate-600">{t('Connecte-toi pour acceder a ton espace.', 'Sign in to access your workspace.')}</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
           <input required type="email" name="email" placeholder="Email" className="w-full rounded-xl border px-3 py-2" />
@@ -78,11 +82,34 @@ export default function LoginPage() {
           {status ? <p className="text-sm">{status}</p> : null}
         </form>
 
+        <div className="mt-4">
+          <GoogleAuthButton
+            label={t('Continuer avec Google', 'Continue with Google')}
+            callbackUrl={callbackUrl}
+          />
+        </div>
+
         <p className="mt-5 text-sm text-slate-600">
           {t('Pas encore de compte ?', 'No account yet?')}{' '}
-          <a href="/auth/register" className="font-semibold text-brand-700">{t('Créer un compte', 'Create one')}</a>
+          <a href="/auth/register" className="font-semibold text-brand-700">{t('Creer un compte', 'Create one')}</a>
         </p>
       </div>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="section py-14">
+          <div className="mx-auto max-w-md rounded-2xl border bg-white p-7 shadow-sm text-sm text-slate-600">
+            Chargement de la page de connexion...
+          </div>
+        </section>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

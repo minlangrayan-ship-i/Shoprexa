@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useSite } from '@/components/site-context';
@@ -16,10 +16,11 @@ export function Footer() {
           <h3 className="text-lg font-semibold text-white">Min-shop</h3>
           <p className="mt-3 text-sm">
             {t(
-              'Marketplace mobile-first pour connecter clients, vendeurs et dropshippers avec une expérience fiable et orientée conversion.',
-              'Mobile-first marketplace connecting customers, sellers, and dropshippers with a trusted conversion-focused experience.'
+              'Empowering African Commerce. Plateforme pensée pour l’Afrique, lancée concrètement au Cameroun.',
+              'Empowering African Commerce. Platform built for Africa, concretely launched in Cameroon.'
             )}
           </p>
+          <p className="mt-2 text-xs font-semibold text-emerald-300">🇨🇲 {t('Disponible au Cameroun', 'Available in Cameroon')}</p>
         </div>
 
         <div>
@@ -50,6 +51,7 @@ export function Footer() {
             <li>+237 692714985</li>
             <li>min-shop@gmail.com</li>
             <li>{t('Basé à Yaoundé, Cameroun', 'Based in Yaounde, Cameroon')}</li>
+            <li>{t('Livraison à Yaoundé, Douala, Bafoussam et dans le Sud', 'Delivery to Yaounde, Douala, Bafoussam, and South region')}</li>
           </ul>
         </div>
       </div>

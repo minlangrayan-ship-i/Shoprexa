@@ -13,6 +13,12 @@ enum UserRole {
   SELLER
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  MIXED
+}
+
 enum SellerStatus {
   PENDING
   ACTIVE
@@ -42,16 +48,30 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum ShipmentStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
   email        String    @unique
-  passwordHash String
+  image        String?
+  provider     AuthProvider @default(LOCAL)
+  passwordHash String?
   phone        String?
   role         UserRole  @default(CUSTOMER)
   seller       Seller?
   carts        Cart[]
   orders       Order[]
+  shipmentEventsCreated ShipmentEvent[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -63,10 +83,17 @@ model Seller {
   companyName    String
   country        String?
   city           String?
+  address        String?
+  latitude       Decimal?     @db.Decimal(10, 7)
+  longitude      Decimal?     @db.Decimal(10, 7)
+  locationVerified Boolean    @default(false)
   status         SellerStatus @default(PENDING)
+  trustScore     Int          @default(0)
+  trustBadge     Boolean      @default(false)
   commissionRate Decimal      @default(0) @db.Decimal(5, 2)
   products       Product[]
   commissions    Commission[]
+  shipments      Shipment[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
@@ -90,6 +117,9 @@ model Product {
   stock       Int         @default(0)
   featured    Boolean     @default(false)
   images      String[]
+  tags        String[]
+  listingCoherenceScore Int @default(50)
+  listingCoherenceStatus String @default("needs_review")
   specs       Json?
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
@@ -141,6 +171,7 @@ model Order {
   paidAt         DateTime?
   items          OrderItem[]
   payments       Payment[]
+  shipment       Shipment?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 }
@@ -188,6 +219,37 @@ model Commission {
   status     String    @default("PENDING")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model Shipment {
+  id                  String         @id @default(cuid())
+  orderId             String         @unique
+  order               Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sellerId            String?
+  seller              Seller?        @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  status              ShipmentStatus @default(PENDING)
+  transportMode       String         @default("moto")
+  estimatedMinHours   Int            @default(2)
+  estimatedMaxHours   Int            @default(6)
+  reliability         Int            @default(75)
+  estimatedDeliveryAt DateTime?
+  events              ShipmentEvent[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model ShipmentEvent {
+  id          String         @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status      ShipmentStatus
+  note        String?
+  location    String?
+  createdById String?
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+
+  @@index([shipmentId, createdAt])
 }
 
 model ContactMessage {

@@ -4,22 +4,36 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Facebook, Instagram, Linkedin, MessageCircle, Youtube } from 'lucide-react';
 import { ProductCard } from '@/components/product-card';
 import { useSite } from '@/components/site-context';
 import { getRegionalDemandAdjustedRating } from '@/lib/mock-marketplace';
 import { validateSellerProfileReadiness } from '@/services/ai/seller-profile-readiness';
 
-function SocialIcon({ label }: { label: 'LinkedIn' | 'WhatsApp' | 'Instagram' | 'Facebook' }) {
+function SocialIcon({ label }: { label: 'LinkedIn' | 'WhatsApp' | 'Instagram' | 'Facebook' | 'Twitter' | 'YouTube' }) {
   const palette: Record<string, string> = {
     LinkedIn: 'bg-sky-100 text-sky-700',
     WhatsApp: 'bg-emerald-100 text-emerald-700',
     Instagram: 'bg-rose-100 text-rose-700',
-    Facebook: 'bg-blue-100 text-blue-700'
+    Facebook: 'bg-blue-100 text-blue-700',
+    Twitter: 'bg-slate-100 text-slate-800',
+    YouTube: 'bg-red-100 text-red-700'
   };
+
+  const icon = {
+    LinkedIn: Linkedin,
+    WhatsApp: MessageCircle,
+    Instagram: Instagram,
+    Facebook: Facebook,
+    Twitter: MessageCircle,
+    YouTube: Youtube
+  }[label];
+
+  const Icon = icon;
 
   return (
     <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${palette[label]}`}>
-      {label.slice(0, 2)}
+      <Icon size={16} />
     </span>
   );
 }
@@ -120,14 +134,18 @@ export default function SellerPublicStorePage() {
     { key: 'linkedin', label: 'LinkedIn' as const, href: seller.socialLinks?.linkedin },
     { key: 'whatsapp', label: 'WhatsApp' as const, href: seller.socialLinks?.whatsapp },
     { key: 'instagram', label: 'Instagram' as const, href: seller.socialLinks?.instagram },
-    { key: 'facebook', label: 'Facebook' as const, href: seller.socialLinks?.facebook }
+    { key: 'facebook', label: 'Facebook' as const, href: seller.socialLinks?.facebook },
+    { key: 'twitter', label: 'Twitter' as const, href: seller.socialLinks?.twitter },
+    { key: 'youtube', label: 'YouTube' as const, href: seller.socialLinks?.youtube }
   ].filter((entry) => Boolean(entry.href));
 
   const isFollowing = Boolean(sessionUser && seller.followerIds?.includes(sessionUser.id));
 
   return (
     <section className="section py-10">
-      <div className="mb-6 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-8 text-white shadow-xl">
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-brand-700 px-6 py-8 text-white shadow-xl">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-14 left-1/3 h-36 w-36 rounded-full bg-emerald-300/20 blur-2xl" />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-300">{t('Boutique officielle', 'Official store')}</p>
@@ -135,15 +153,15 @@ export default function SellerPublicStorePage() {
             <p className="mt-2 text-sm text-slate-200">{seller.city}, {seller.country}</p>
           </div>
           <div className="grid min-w-[220px] grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-white/10 p-2">
+            <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm transition hover:-translate-y-0.5">
               <p className="text-xs text-slate-300">{t('Produits', 'Products')}</p>
               <p className="text-lg font-bold">{productOffers.length}</p>
             </div>
-            <div className="rounded-xl bg-white/10 p-2">
+            <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm transition hover:-translate-y-0.5">
               <p className="text-xs text-slate-300">{t('Services', 'Services')}</p>
               <p className="text-lg font-bold">{serviceOffers.length}</p>
             </div>
-            <div className="rounded-xl bg-white/10 p-2">
+            <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm transition hover:-translate-y-0.5">
               <p className="text-xs text-slate-300">{t('Abonnes', 'Followers')}</p>
               <p className="text-lg font-bold">{seller.followerIds?.length ?? 0}</p>
             </div>
@@ -152,7 +170,7 @@ export default function SellerPublicStorePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        <div className="rounded-3xl border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border bg-white p-6 shadow-sm ring-1 ring-slate-100">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-4">
               <div className="relative h-20 w-20 overflow-hidden rounded-2xl border bg-slate-50">
@@ -169,7 +187,7 @@ export default function SellerPublicStorePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 p-4 text-sm">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm shadow-inner">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('Disponibilite', 'Availability')}</p>
               <p className="mt-2 font-semibold">{seller.openingHours} - {seller.closingHours}</p>
               <p className="mt-2 text-slate-600">{(seller.followerIds?.length ?? 0)} {t('abonnes', 'followers')}</p>
@@ -192,19 +210,19 @@ export default function SellerPublicStorePage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border bg-slate-50 p-5 shadow-inner">
+          <div className="mt-6 rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-5 shadow-inner">
             <h2 className="text-lg font-semibold">{t('Activites de l entreprise', 'Company activities')}</h2>
             <p className="mt-3 leading-7 text-slate-700">{seller.activityDescription}</p>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border p-4">
+            <div className="rounded-2xl border p-4 transition hover:shadow-sm">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('Coordonnees', 'Contact details')}</p>
               <p className="mt-3 text-sm text-slate-700">{t('Localisation', 'Location')}: {seller.city}, {seller.country}</p>
               <p className="mt-1 text-sm text-slate-700">Email: {seller.email}</p>
               <p className="mt-1 text-sm text-slate-700">{t('Horaires', 'Business hours')}: {seller.openingHours} - {seller.closingHours}</p>
             </div>
-            <div className="rounded-2xl border p-4">
+            <div className="rounded-2xl border p-4 transition hover:shadow-sm">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('Reseaux', 'Social links')}</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {socialEntries.map((entry) => (
@@ -220,13 +238,13 @@ export default function SellerPublicStorePage() {
         </div>
 
         <div className="space-y-6">
-          <div className="overflow-hidden rounded-3xl border bg-white shadow-sm">
-            <div className="relative h-72 w-full">
+          <div className="overflow-hidden rounded-3xl border bg-white shadow-sm ring-1 ring-slate-100">
+            <div className="group relative h-72 w-full">
               <Image
                 src={seller.announcementImages?.[announcementIndex] ?? seller.logoUrl ?? '/favicon.ico'}
                 alt={t('Annonce recente', 'Recent announcement')}
                 fill
-                className="object-cover"
+                className="object-cover transition duration-700 group-hover:scale-105"
               />
             </div>
             <div className="p-4">
@@ -240,7 +258,7 @@ export default function SellerPublicStorePage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border bg-white p-5 shadow-sm ring-1 ring-slate-100">
             <div className="inline-flex rounded-xl border bg-slate-50 p-1 text-sm">
               <button onClick={() => setActiveTab('products')} className={`rounded-lg px-3 py-1.5 font-semibold ${activeTab === 'products' ? 'bg-dark text-white' : 'text-slate-700'}`}>
                 {t('Produits', 'Products')} ({productOffers.length})

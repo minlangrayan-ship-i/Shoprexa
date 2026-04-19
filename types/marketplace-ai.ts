@@ -274,3 +274,15 @@ export type ListingIntelligenceResponse = {
   answer: GroundedAnswer;
   fallbackUsed: boolean;
 };
+
+export type AiBaseModel = 'llama3' | 'mistral_7b';
+export type AiOrchestrationFramework = 'langchain' | 'llamaindex';
+export type AiOutputFormat = 'structured_json' | 'assistant_text';
+
+export type AiLabConfig = {
+  baseModel: AiBaseModel;
+  orchestration: AiOrchestrationFramework;
+  outputFormat: AiOutputFormat;
+  separateSources: boolean;
+  lastUpdatedAt: string;
+};

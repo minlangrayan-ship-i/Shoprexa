@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSite } from '@/components/site-context';
+import { getCityDistricts, getLaunchCities, launchCountryName } from '@/lib/geo-config';
 
 function fileToBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -22,6 +23,9 @@ export default function ProfilePage() {
   const [announcementImages, setAnnouncementImages] = useState<string[]>([]);
 
   const sellerProfile = sellers.find((seller) => seller.id === sessionUser?.sellerId);
+  const launchCities = getLaunchCities();
+  const [profileCity, setProfileCity] = useState(sessionUser.city);
+  const districts = getCityDistricts(profileCity);
 
   if (!sessionUser) {
     return (
@@ -45,8 +49,9 @@ export default function ProfilePage() {
     const result = updateProfile({
       name: String(formData.get('name')),
       phone: String(formData.get('phone')),
-      country: String(formData.get('country')),
+      country: launchCountryName,
       city: String(formData.get('city')),
+      district: String(formData.get('district') ?? ''),
       avatar,
       company: String(formData.get('company') ?? ''),
       about: String(formData.get('about') ?? ''),
@@ -57,6 +62,8 @@ export default function ProfilePage() {
       whatsapp: String(formData.get('whatsapp') ?? ''),
       instagram: String(formData.get('instagram') ?? ''),
       facebook: String(formData.get('facebook') ?? ''),
+      twitter: String(formData.get('twitter') ?? ''),
+      youtube: String(formData.get('youtube') ?? ''),
       announcementImages
     });
 
@@ -99,19 +106,27 @@ export default function ProfilePage() {
 
           <select
             name="country"
-            defaultValue={sessionUser.country}
-            onChange={(event) => setCountry(event.target.value)}
-            className="rounded-xl border px-3 py-2"
+            value={launchCountryName}
+            onChange={() => setCountry(launchCountryName)}
+            disabled
+            className="rounded-xl border bg-slate-50 px-3 py-2 text-slate-600"
           >
-            {[sessionUser.country, 'Cameroun', 'Cote d\'Ivoire', 'Senegal', 'Congo', 'Tchad', 'Nigeria', 'Kenya']
-              .filter((value, index, array) => array.indexOf(value) === index)
-              .map((entry) => (
-                <option key={entry} value={entry}>{entry}</option>
-              ))}
+            <option value={launchCountryName}>{launchCountryName}</option>
           </select>
 
-          <select name="city" defaultValue={sessionUser.city} className="rounded-xl border px-3 py-2">
-            {(availableCities.length > 0 ? availableCities : [sessionUser.city]).map((entry) => (
+          <select
+            name="city"
+            value={profileCity}
+            onChange={(event) => setProfileCity(event.target.value)}
+            className="rounded-xl border px-3 py-2"
+          >
+            {(availableCities.length > 0 ? availableCities : launchCities).map((entry) => (
+              <option key={entry} value={entry}>{entry}</option>
+            ))}
+          </select>
+
+          <select name="district" defaultValue={sessionUser.district ?? districts[0]} className="rounded-xl border px-3 py-2">
+            {districts.map((entry) => (
               <option key={entry} value={entry}>{entry}</option>
             ))}
           </select>
@@ -142,6 +157,8 @@ export default function ProfilePage() {
               <input name="whatsapp" defaultValue={sellerProfile?.socialLinks?.whatsapp} placeholder="WhatsApp URL" className="rounded-xl border px-3 py-2" />
               <input name="instagram" defaultValue={sellerProfile?.socialLinks?.instagram} placeholder="Instagram URL" className="rounded-xl border px-3 py-2" />
               <input name="facebook" defaultValue={sellerProfile?.socialLinks?.facebook} placeholder="Facebook URL" className="rounded-xl border px-3 py-2" />
+              <input name="twitter" defaultValue={sellerProfile?.socialLinks?.twitter} placeholder="Twitter/X URL" className="rounded-xl border px-3 py-2" />
+              <input name="youtube" defaultValue={sellerProfile?.socialLinks?.youtube} placeholder="YouTube URL" className="rounded-xl border px-3 py-2" />
               <label className="rounded-xl border px-3 py-3 text-sm font-semibold md:col-span-2">
                 {t('Ajouter des annonces publicitaires (images)', 'Add ad banners (images)')}
                 <input type="file" accept="image/*" multiple onChange={onAnnouncementImagesChange} className="mt-2 block text-xs" />
